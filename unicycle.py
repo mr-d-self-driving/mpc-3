@@ -94,15 +94,9 @@ def nlp(xt, yt):
     sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg)
     w_opt = sol['x'].full().flatten()
 
-    # print('w_opt ', w_opt)
     return w_opt
 
 # Plot the solution
-
-# print('x_opt', x_opt)
-# print('y_opt', y_opt)
-# print('a_opt', a_opt)
-# print('alpha_opt', alpha_opt)
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -150,7 +144,7 @@ def plot(xt, yt):
 
 def onclick(event):
     if event.inaxes == ax2:
-        # ax = event.inaxes
+
         ax1.cla()
         ax2.cla()
         xt, yt = event.xdata, event.ydata
@@ -161,24 +155,6 @@ def onclick(event):
         ax2.plot([xt], [yt], marker='x')
         plt.draw()
 
-    # fig.canvas.mpl_disconnect(cid)
-
-# # plt.figure(1)
-# # plt.clf()
-# ax1.plot(tgrid, x_opt, '--')
-# ax1.plot(tgrid, y_opt, '-')
-# ax1.step(tgrid, vertcat(DM.nan(1), a_opt), '-.')
-# ax1.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.')
-
-# ax2.plot(x_opt, y_opt, '-o')
-# # plt.plot(tgrid, x_opt, '--')
-# # plt.plot(tgrid, y_opt, '-')
-# # plt.step(tgrid, vertcat(DM.nan(1), a_opt), '-.')
-# # plt.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.')
-# ax1.legend(['x','y','a', 'alpha'])
-# ax1.grid()
-
-# cid = fig.canvas.mpl_connect('button_press_event', onclick)
-
+# Initial point
 plot(1, 1)
 plt.show()
