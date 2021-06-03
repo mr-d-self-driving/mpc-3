@@ -3,6 +3,8 @@ from casadi import *
 T = 10. # Time horizon
 N = 20 # number of control intervals
 
+xt, yt = 2, 2
+
 xs = MX.sym('xs')
 ys = MX.sym('ys')
 theta = MX.sym('theta')
@@ -17,7 +19,7 @@ u = vertcat(a, alpha)
 
 xdot = vertcat(v*cos(theta), v*sin(theta), w, a, alpha)
 
-L = xs**2+ys**2+a**2+alpha**2
+L = (xs-xt)**2+(ys-yt)**2+a**2+alpha**2
 
 # Fixed step Runge-Kutta 4 integrator
 M = 4 # RK4 steps per interval
@@ -109,14 +111,23 @@ print('a_opt', a_opt)
 print('alpha_opt', alpha_opt)
 
 tgrid = [T/N*k for k in range(N+1)]
+
 import matplotlib.pyplot as plt
-plt.figure(1)
-plt.clf()
-plt.plot(tgrid, x_opt, '--')
-plt.plot(tgrid, y_opt, '-')
-plt.step(tgrid, vertcat(DM.nan(1), a_opt), '-.')
-plt.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.')
-plt.xlabel('t')
-plt.legend(['x','y','a', 'alpha'])
-plt.grid()
+import matplotlib.animation as animation
+
+fig, (ax1, ax2) =  plt.subplots(1, 2)
+# plt.figure(1)
+# plt.clf()
+ax1.plot(tgrid, x_opt, '--')
+ax1.plot(tgrid, y_opt, '-')
+ax1.step(tgrid, vertcat(DM.nan(1), a_opt), '-.')
+ax1.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.')
+
+ax2.plot(x_opt, y_opt, '-o')
+# plt.plot(tgrid, x_opt, '--')
+# plt.plot(tgrid, y_opt, '-')
+# plt.step(tgrid, vertcat(DM.nan(1), a_opt), '-.')
+# plt.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.')
+ax1.legend(['x','y','a', 'alpha'])
+ax1.grid()
 plt.show()
