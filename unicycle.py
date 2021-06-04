@@ -19,7 +19,7 @@ def nlp(xt, yt):
 
     xdot = vertcat(v*cos(theta), v*sin(theta), w, a, alpha)
 
-    L = (xs-xt)**2+(ys-yt)**2+a**2+alpha**2
+    L = (xs-xt)**2 + (ys-yt)**2 + a**2 + alpha**2
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
