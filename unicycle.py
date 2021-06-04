@@ -77,8 +77,8 @@ def nlp(xt, yt):
         # New NLP variable for state at end of interval
         Xk = MX.sym('X_' + str(k+1), 5)
         w   += [Xk]
-        lbw += [-inf, -inf,    0, -1, -1]
-        ubw += [ inf,  inf, 2*pi, 1,  1]
+        lbw += [-inf, -inf, -2*pi, -1, -1]
+        ubw += [ inf,  inf,  2*pi, 1,  1]
         w0  += [0, 0, 0, 0, 0]
 
         # Add equality constraint
