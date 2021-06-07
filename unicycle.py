@@ -1,9 +1,11 @@
+import random
+import time
 from casadi import *
 
 T = 10. # Time horizon
 N = 20 # number of control intervals
 
-def nlp(xt, yt):
+def nlp(x_init, y_init, xt, yt):
 
     xs = MX.sym('xs')
     ys = MX.sym('ys')
@@ -38,10 +40,10 @@ def nlp(xt, yt):
         Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
     F = Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
 
-    # Evaluate at a test point
-    Fk = F(x0=[0.2, 0.3, 0, 0.2, 0.2], p=[0.1, 0.1])
-    print(Fk['xf'])
-    print(Fk['qf'])
+    # # Evaluate at a test point
+    # Fk = F(x0=[0.2, 0.3, 0, 0.2, 0.2], p=[0.1, 0.1])
+    # print(Fk['xf'])
+    # print(Fk['qf'])
 
     # Start with an empty NLP
     w=[]
@@ -56,9 +58,9 @@ def nlp(xt, yt):
     # "Lift" initial conditions
     Xk = MX.sym('X0', 5)
     w += [Xk]
-    lbw += [0, 1, 0, 0, 0]
-    ubw += [0, 1, 0, 0, 0]
-    w0 +=  [0, 1, 0, 0, 0]
+    lbw += [x_init, y_init, 0, 0, 0]
+    ubw += [x_init, y_init, 0, 0, 0]
+    w0 +=  [x_init, y_init, 0, 0, 0]
 
     # Formulate the NLP
     for k in range(N):
@@ -101,28 +103,36 @@ def nlp(xt, yt):
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-fig, (ax1, ax2) =  plt.subplots(1, 2)
+fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-def plot(xt, yt):
+def solved_vals(x_init, y_init, xt, yt):
 
     def sep_vals(lst):
         x_opt = lst[0::7]
         y_opt = lst[1::7]
-        theta_opt = lst[2::7]
-        v_opt = lst[3::7]
-        omega_opt = lst[4::7]
+        # theta_opt = lst[2::7]
+        # v_opt = lst[3::7]
+        # omega_opt = lst[4::7]
         a_opt = lst[5::7]
         alpha_opt = lst[6::7]
 
         return x_opt, y_opt, a_opt, alpha_opt
     
-    w_opt = nlp(xt, yt)
+    w_opt = nlp(x_init, y_init, xt, yt)
     x_opt, y_opt, a_opt, alpha_opt = sep_vals(w_opt)
 
-    tgrid = [T/N*k for k in range(N+1)]
+    return x_opt, y_opt, a_opt, alpha_opt
+
+def plot(x_init, y_init, xt, yt):
+    
+    # def animate(i):
+    #     pt.set_data(x_opt[i], y_opt[i])
+
+    x_opt, y_opt, a_opt, alpha_opt = solved_vals(x_init, y_init, xt, yt)
 
     x_diff = [xt - x for x in x_opt]
     y_diff = [yt - y for y in y_opt]
+    tgrid = [T/N*k for k in range(N+1)]
 
     ax1.plot(tgrid, x_diff, '--')
     ax1.plot(tgrid, y_diff, '-')
@@ -135,12 +145,16 @@ def plot(xt, yt):
     ax2.set_ylim([-2, 2])
     ax2.set_xlim([-2, 2])
 
-    ax2.plot(x_opt, y_opt, '-o')
-    ax2.grid()
+    ax2.plot(x_opt, y_opt, '-')
+    ax2.grid()  
 
-    cid = fig.canvas.mpl_connect('button_press_event', onclick)
-
-    plt.show()
+    ax2.plot([x_init], [y_init], marker='o')
+    ax2.plot([xt], [yt], marker='x')
+    plt.draw()
+    # uni, = ax2.plot([x_init], [y_init], marker='o')
+    # anim = animation.FuncAnimation(ax2.figure, animate, interval=100, frames=len(x_opt)-1, repeat=False)
+    # plt.draw()
+    # plt.show()
 
 def onclick(event):
     if event.inaxes == ax2:
@@ -150,11 +164,23 @@ def onclick(event):
         xt, yt = event.xdata, event.ydata
         print('x = %f, y = %f'%(xt, yt))
 
-        plot(xt, yt)
+        plot(0, 1, xt, yt)
 
         ax2.plot([xt], [yt], marker='x')
         plt.draw()
 
 # Initial point
-plot(1, 1)
+plot(0, 1, 1, 1)
+cid = fig.canvas.mpl_connect('button_press_event', onclick)
+x, y = 1, 1
+
+while True:
+    ax1.cla()
+    ax2.cla()
+    x_tmp, y_tmp = float(random.randint(-195, 195))/100, float(random.randint(-195, 195))/100
+    print(x_tmp, y_tmp)
+    plot(x, y, x_tmp, y_tmp)
+    plt.pause(1)
+    x, y, = x_tmp, y_tmp
+
 plt.show()
