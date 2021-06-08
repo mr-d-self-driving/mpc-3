@@ -3,9 +3,9 @@ import time
 from casadi import *
 
 T = 10. # Time horizon
-N = 20 # number of control intervals
+N = 40 # number of control intervals
 
-def nlp(x_init, y_init, xt, yt):
+def nlp(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
 
     xs = MX.sym('xs')
     ys = MX.sym('ys')
@@ -58,9 +58,9 @@ def nlp(x_init, y_init, xt, yt):
     # "Lift" initial conditions
     Xk = MX.sym('X0', 5)
     w += [Xk]
-    lbw += [x_init, y_init, 0, 0, 0]
-    ubw += [x_init, y_init, 0, 0, 0]
-    w0 +=  [x_init, y_init, 0, 0, 0]
+    lbw += [x_init, y_init, theta_init, v_init, omega_init]
+    ubw += [x_init, y_init, theta_init, v_init, omega_init]
+    w0  += [x_init, y_init, theta_init, v_init, omega_init]
 
     # Formulate the NLP
     for k in range(N):
@@ -105,39 +105,42 @@ import matplotlib.animation as animation
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-def solved_vals(x_init, y_init, xt, yt):
+def solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
 
     def sep_vals(lst):
         x_opt = lst[0::7]
         y_opt = lst[1::7]
-        # theta_opt = lst[2::7]
-        # v_opt = lst[3::7]
-        # omega_opt = lst[4::7]
+        theta_opt = lst[2::7]
+        v_opt = lst[3::7]
+        omega_opt = lst[4::7]
         a_opt = lst[5::7]
         alpha_opt = lst[6::7]
 
-        return x_opt, y_opt, a_opt, alpha_opt
+        return x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt
     
-    w_opt = nlp(x_init, y_init, xt, yt)
-    x_opt, y_opt, a_opt, alpha_opt = sep_vals(w_opt)
+    w_opt = nlp(x_init, y_init, theta_init, v_init, omega_init, xt, yt)
+    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = sep_vals(w_opt)
 
-    return x_opt, y_opt, a_opt, alpha_opt
+    return x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt
 
-def plot(x_init, y_init, xt, yt):
+def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
     
     # def animate(i):
     #     pt.set_data(x_opt[i], y_opt[i])
+    #     return pt,
 
-    x_opt, y_opt, a_opt, alpha_opt = solved_vals(x_init, y_init, xt, yt)
+    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt)
 
     x_diff = [xt - x for x in x_opt]
     y_diff = [yt - y for y in y_opt]
     tgrid = [T/N*k for k in range(N+1)]
 
-    ax1.plot(tgrid, x_diff, '--')
-    ax1.plot(tgrid, y_diff, '-')
-    ax1.step(tgrid, vertcat(DM.nan(1), a_opt), '-.')
-    ax1.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.')
+    ax1.set_ylim([-2.0, 2.0])
+
+    ax1.plot(tgrid, x_diff, '-', color='gray')
+    ax1.plot(tgrid, y_diff, '-', color='black')
+    ax1.step(tgrid, vertcat(DM.nan(1), a_opt), '-.', color='green')
+    ax1.step(tgrid, vertcat(DM.nan(1), alpha_opt), '-.', color='blue')
 
     ax1.legend(['xt - x','yt - y','a', 'alpha'])
     ax1.grid()
@@ -145,12 +148,31 @@ def plot(x_init, y_init, xt, yt):
     ax2.set_ylim([-2, 2])
     ax2.set_xlim([-2, 2])
 
-    ax2.plot(x_opt, y_opt, '-')
+    ax2.plot(x_opt, y_opt, '-', color='green', alpha=0.2)
     ax2.grid()  
 
-    ax2.plot([x_init], [y_init], marker='o')
-    ax2.plot([xt], [yt], marker='x')
+    ax2.plot([x_opt[0]], [y_opt[0]], marker='o', color='blue')
+    ax2.plot([xt], [yt], marker='x', color='blue')
+
+    # Plot dt time step
+    v_ts = v_opt[0] + a_opt[0]*dt
+    omega_ts = omega_opt[0] + alpha_opt[0]*dt
+
+    ds = v_opt[0]*dt + (1/2)*a_opt[0]*(dt**2)
+    dtheta = omega_opt[0]*dt + (1/2)*alpha_opt[0]*(dt**2)
+
+    theta_ts = theta_opt[0] + dtheta
+    dx, dy = ds*cos(theta_ts), ds*sin(theta_ts)
+
+    print('dx', dx, 'dy', dy, 'dtheta', dtheta, 'theta', theta_ts)
+
+    x_ts, y_ts = x_opt[0] + dx, y_opt[0] + dy
+
+    ax2.plot([x_opt[0], x_ts], [y_opt[0], y_ts], '-', color='black')
     plt.draw()
+
+    return x_ts, y_ts, theta_ts, v_ts, omega_ts
+
     # uni, = ax2.plot([x_init], [y_init], marker='o')
     # anim = animation.FuncAnimation(ax2.figure, animate, interval=100, frames=len(x_opt)-1, repeat=False)
     # plt.draw()
@@ -170,17 +192,55 @@ def onclick(event):
         plt.draw()
 
 # Initial point
-plot(0, 1, 1, 1)
+# plot(0, 1, 0, 0)
+x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts = 0, 1, 0, 0, 0
 cid = fig.canvas.mpl_connect('button_press_event', onclick)
-x, y = 1, 1
+# x, y = 1, 1
 
-while True:
+target_x, target_y = -1.0, -0.75
+dt = 0.25
+
+e = 0.07
+
+while abs(x_prev_ts-target_x) > e or abs(y_prev_ts-target_y) > e:
     ax1.cla()
     ax2.cla()
-    x_tmp, y_tmp = float(random.randint(-195, 195))/100, float(random.randint(-195, 195))/100
-    print(x_tmp, y_tmp)
-    plot(x, y, x_tmp, y_tmp)
-    plt.pause(1)
-    x, y, = x_tmp, y_tmp
+    print(x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts)
+    
+    x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts = plot(x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts, target_x, target_y, dt=dt)
+    plt.pause(dt)
+
+# while True:
+#     ax1.cla()
+#     ax2.cla()
+#     # if x < 0:
+#     #     xlb = max(-250, -200 + x)
+#     #     xub = min(250, xlb + 250)
+#     # else:
+#     #     xub = min(250, 200 + x)
+#     #     xlb = max(-250, xub - 250)
+    
+#     # if y < 0:
+#     #     ylb = max(-250, -200 + y)
+#     #     yub = min(250, ylb + 250)
+#     # else:
+#     #     yub = min(290, 200 + y)
+#     #     ylb = max(-280, yub - 250)
+
+#     # x_tmp, y_tmp = random.randint(xlb, xub), random.randint(ylb, yub)
+#     # print('prelim', x_tmp, y_tmp)
+
+#     # x_tmp = x_tmp - 200 if x_tmp < 0 else x_tmp + 200
+#     # y_tmp = y_tmp - 200 if y_tmp < 0 else y_tmp + 200
+
+#     x_tmp, y_tmp = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
+
+#     # print('fin', x_tmp, y_tmp)
+#     # print('x', xlb, xub)
+#     # print('y', ylb, yub)
+#     plot(x, y, x_tmp, y_tmp)
+#     # plot(x/100, y/100, float(x_tmp)/100, float(y_tmp)/100)
+#     plt.pause(1)
+#     x, y, = x_tmp, y_tmp
 
 plt.show()
