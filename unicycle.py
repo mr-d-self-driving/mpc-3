@@ -122,7 +122,7 @@ def solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
     x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = sep_vals(w_opt)
 
     return x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt
-
+    
 def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
     
     # def animate(i):
@@ -148,7 +148,7 @@ def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
     ax2.set_ylim([-2, 2])
     ax2.set_xlim([-2, 2])
 
-    ax2.plot(x_opt, y_opt, '-', color='green', alpha=0.2)
+    ax2.plot(x_opt, y_opt, '-', color='green', alpha=0.3)
     ax2.grid()  
 
     ax2.plot([x_opt[0]], [y_opt[0]], marker='o', color='blue')
@@ -202,13 +202,15 @@ dt = 0.25
 
 e = 0.07
 
-while abs(x_prev_ts-target_x) > e or abs(y_prev_ts-target_y) > e:
+while True:
     ax1.cla()
     ax2.cla()
     print(x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts)
     
     x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts = plot(x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts, target_x, target_y, dt=dt)
     plt.pause(dt)
+    if abs(x_prev_ts-target_x) < e and abs(y_prev_ts-target_y) < e:
+        target_x, target_y = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
 
 # while True:
 #     ax1.cla()
