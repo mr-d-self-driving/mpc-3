@@ -27,10 +27,13 @@ solver, params = build_solver(init_ts, target_x, target_y)
 def update_params(init_ts):
     global params
     w0, lbw, ubw, lbg, ubg = params
-
     w0 = init_ts + w0[5:]
     lbw = init_ts + lbw[5:]
     ubw = init_ts + ubw[5:]
+
+    # w0[:5] = init_ts
+    # lbw[:5] = init_ts
+    # ubw[:5] = init_ts
 
     params = [w0, lbw, ubw, lbg, ubg]
 
