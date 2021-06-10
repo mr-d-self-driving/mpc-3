@@ -40,11 +40,6 @@ def nlp(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
         Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
     F = Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
 
-    # # Evaluate at a test point
-    # Fk = F(x0=[0.2, 0.3, 0, 0.2, 0.2], p=[0.1, 0.1])
-    # print(Fk['xf'])
-    # print(Fk['qf'])
-
     # Start with an empty NLP
     w=[]
     w0 = []
@@ -124,10 +119,6 @@ def solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
     return x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt
     
 def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
-    
-    # def animate(i):
-    #     pt.set_data(x_opt[i], y_opt[i])
-    #     return pt,
 
     x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt)
 
@@ -173,11 +164,6 @@ def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
 
     return x_ts, y_ts, theta_ts, v_ts, omega_ts
 
-    # uni, = ax2.plot([x_init], [y_init], marker='o')
-    # anim = animation.FuncAnimation(ax2.figure, animate, interval=100, frames=len(x_opt)-1, repeat=False)
-    # plt.draw()
-    # plt.show()
-
 def onclick(event):
     if event.inaxes == ax2:
 
@@ -192,10 +178,8 @@ def onclick(event):
         plt.draw()
 
 # Initial point
-# plot(0, 1, 0, 0)
 x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts = 0, 1, 0, 0, 0
 cid = fig.canvas.mpl_connect('button_press_event', onclick)
-# x, y = 1, 1
 
 target_x, target_y = -1.0, -0.75
 dt = 0.25
@@ -211,38 +195,5 @@ while True:
     plt.pause(dt)
     if abs(x_prev_ts-target_x) < e and abs(y_prev_ts-target_y) < e:
         target_x, target_y = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
-
-# while True:
-#     ax1.cla()
-#     ax2.cla()
-#     # if x < 0:
-#     #     xlb = max(-250, -200 + x)
-#     #     xub = min(250, xlb + 250)
-#     # else:
-#     #     xub = min(250, 200 + x)
-#     #     xlb = max(-250, xub - 250)
-    
-#     # if y < 0:
-#     #     ylb = max(-250, -200 + y)
-#     #     yub = min(250, ylb + 250)
-#     # else:
-#     #     yub = min(290, 200 + y)
-#     #     ylb = max(-280, yub - 250)
-
-#     # x_tmp, y_tmp = random.randint(xlb, xub), random.randint(ylb, yub)
-#     # print('prelim', x_tmp, y_tmp)
-
-#     # x_tmp = x_tmp - 200 if x_tmp < 0 else x_tmp + 200
-#     # y_tmp = y_tmp - 200 if y_tmp < 0 else y_tmp + 200
-
-#     x_tmp, y_tmp = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
-
-#     # print('fin', x_tmp, y_tmp)
-#     # print('x', xlb, xub)
-#     # print('y', ylb, yub)
-#     plot(x, y, x_tmp, y_tmp)
-#     # plot(x/100, y/100, float(x_tmp)/100, float(y_tmp)/100)
-#     plt.pause(1)
-#     x, y, = x_tmp, y_tmp
 
 plt.show()
