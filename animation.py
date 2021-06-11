@@ -19,35 +19,25 @@ dt = 0.2
 e = 0.07
 
 keep_going = True
-updated_target = False
 num_targets = 0
 
-solver, params = build_solver(init_ts, target_x, target_y)
-
-def update_params(init_ts):
-    global params
-    w0, lbw, ubw, lbg, ubg = params
-    w0 = init_ts + w0[5:]
-    lbw = init_ts + lbw[5:]
-    ubw = init_ts + ubw[5:]
-
-    # w0[:5] = init_ts
-    # lbw[:5] = init_ts
-    # ubw[:5] = init_ts
-
-    params = [w0, lbw, ubw, lbg, ubg]
+solver, params = build_solver(init_ts)
 
 def solve_mpc():
-    global solver, params
+
     w0, lbw, ubw, lbg, ubg = params
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg)
+    w0 = init_ts + w0
+    lbw = init_ts + lbw
+    ubw = init_ts + ubw
+
+    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y))
     w_opt = sol['x'].full().flatten()
 
     return w_opt
 
-def solved_vals(init_ts, xt, yt):
-    global solver, params, updated_target
+def solved_vals():
+    global solver, params
 
     def sep_vals(lst):
         x_opt = lst[0::7]
@@ -59,12 +49,6 @@ def solved_vals(init_ts, xt, yt):
         alpha_opt = lst[6::7]
 
         return [x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt]
-    
-    if updated_target:
-        solver, params = build_solver(init_ts, xt, yt)
-        updated_target = False
-    else:
-        update_params(init_ts)
 
     w_opt = solve_mpc()
     opts = sep_vals(w_opt)
@@ -89,7 +73,7 @@ def compute_step(init): # init = [x, y, theta, v, omega, a, alpha]
 # tgrid doesn't need to be recomputed
 tgrid = [T/N*k for k in range(N+1)]
 
-x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(init_ts, target_x, target_y)
+x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals()
 
 x_diff = [target_x - x for x in x_opt]
 y_diff = [target_y - y for y in y_opt]
@@ -130,9 +114,9 @@ def gen():
 def update(i):
     global x_line, y_line, a_line, alpha_line
     global uni_pt, target_pt, step_traj, uni_traj
-    global init_ts, target_x, target_y, num_targets, keep_going, updated_target
+    global init_ts, target_x, target_y, num_targets, keep_going
 
-    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(init_ts, target_x, target_y)
+    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals()
 
     x_diff = [target_x - x for x in x_opt]
     y_diff = [target_y - y for y in y_opt]
@@ -154,7 +138,6 @@ def update(i):
 
     if abs(init_ts[0]-target_x) < e and abs(init_ts[1]-target_y) < e:
         keep_going = False
-        updated_target = True
         target_x, target_y = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
         target_pt.set_data([target_x], [target_y])
     

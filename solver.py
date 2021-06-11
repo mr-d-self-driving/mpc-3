@@ -3,7 +3,9 @@ from casadi import *
 T = 10. # Time horizon
 N = 40 # number of control intervals
 
-def build_solver(init_ts, xt, yt):
+def build_solver(init_ts):
+    xt = MX.sym('xt')
+    yt = MX.sym('yt')
 
     xs = MX.sym('xs')
     ys = MX.sym('ys')
@@ -51,6 +53,7 @@ def build_solver(init_ts, xt, yt):
     # "Lift" initial conditions
     Xk = MX.sym('X0', 5)
     w += [Xk]
+    
     lbw += init_ts
     ubw += init_ts
     w0  += init_ts
@@ -82,7 +85,7 @@ def build_solver(init_ts, xt, yt):
         ubg += [0, 0, 0, 0, 0]
 
     # Create an NLP solver
-    prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g)}
+    prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g), 'p': vertcat(xt, yt)}
     solver = nlpsol('solver', 'ipopt', prob);
 
-    return solver, [w0, lbw, ubw, lbg, ubg]
+    return solver, [w0[5:], lbw[5:], ubw[5:], lbg, ubg]
