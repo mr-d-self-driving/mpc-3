@@ -4,7 +4,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib.animation import FuncAnimation
+import matplotlib.animation as animation
 from casadi import *
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
@@ -15,7 +15,7 @@ N = 40 # number of control intervals
 init_ts = [0, 1, 0, 0, 0]
 target_x, target_y = -1.0, -0.75
 
-dt = 0.2
+dt = .033
 e = 0.07
 
 keep_going = True
@@ -104,10 +104,11 @@ step_traj, = ax2.plot([x_opt[0], ts[0]], [y_opt[0], ts[1]], '-', color='black')
 def gen():
     global keep_going, num_targets
     i = 0
-    while num_targets < 5:
+    while num_targets < 3:
         i += 1
         if not keep_going:
             num_targets += 1
+            print(num_targets)
             keep_going = True
         yield i
 
@@ -143,6 +144,8 @@ def update(i):
     
     return [x_line, y_line, a_line, alpha_line, uni_traj, uni_pt, step_traj]
 
-anim = FuncAnimation(fig, update, interval=100, frames=gen)
+writergif = animation.PillowWriter(fps=30)
+anim = animation.FuncAnimation(fig, update, interval=100, frames=gen)
+anim.save('test.gif', writer=writergif)
 
-plt.show()
+# plt.show()

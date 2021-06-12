@@ -86,6 +86,6 @@ def build_solver(init_ts):
 
     # Create an NLP solver
     prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g), 'p': vertcat(xt, yt)}
-    solver = nlpsol('solver', 'ipopt', prob);
+    solver = nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4});
 
     return solver, [w0[5:], lbw[5:], ubw[5:], lbg, ubg]
