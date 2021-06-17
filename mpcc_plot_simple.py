@@ -8,23 +8,23 @@ T = 10. # Time horizon
 N = 40 # number of control intervals
 
 fig, (ax1, ax2) =  plt.subplots(1, 2)
-init_ts = [0, 0, 0, 0, 0]
-target_x, target_y = 2, 4
+init_ts = [0, 0, 0, 0, 0, 0]
+target_x, target_y = 2, 3
 
 # simple curve: y = x^2
 curve_x = (lambda t: t)
-curve_y = (lambda t: t**2 + 1)
+curve_y = (lambda t: t**2)
 
 def plot():
 
     def sep_vals(lst):
         x_opt = lst[0::8]
         y_opt = lst[1::8]
-        alphaux_opt = lst[5::8]
-        aux_opt = lst[6::8]
-        t_opt = lst[7::8]
+        omega_opt = lst[5::8]
+        alphaux_opt = lst[6::8]
+        aux_opt = lst[7::8]
 
-        return x_opt, y_opt, alphaux_opt, aux_opt, t_opt
+        return x_opt, y_opt, omega_opt, alphaux_opt, aux_opt
     
     solver, params = build_solver(curve_x, curve_y, init_ts)
 
@@ -33,7 +33,7 @@ def plot():
     sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y))
     w_opt = sol['x'].full().flatten()
 
-    x_opt, y_opt, alphaux_opt, aux_opt, t_opt = sep_vals(w_opt)
+    x_opt, y_opt, omega_opt, alphaux_opt, aux_opt = sep_vals(w_opt)
 
     tgrid = [T/N*k for k in range(N+1)]
 
@@ -42,23 +42,25 @@ def plot():
 
     ax1.plot(tgrid, x_diff, '-', color='gray')
     ax1.plot(tgrid, y_diff, '-', color='black')
+    ax1.step(tgrid, omega_opt, '-.', color='purple')
     ax1.step(tgrid, [None] + list(aux_opt), '-.', color='green')
     ax1.step(tgrid, [None] + list(alphaux_opt), '-.', color='blue')
-    ax1.step(tgrid, [None] + list(t_opt), '-.', color='purple')
 
-    ax1.legend(['xt - x','yt - y','a', 'alpha', 't'])
+    ax1.legend(['xt - x','yt - y', 'omega', 'a_x^u', 'alpha_x^u'])
     ax1.grid()
 
     ax2.set_ylim([-3, 5])
     ax2.set_xlim([-3, 3])
 
-    ax2.plot(x_opt, y_opt, '-o')
+    ax2.plot(x_opt, y_opt, '-', color='green', alpha=0.4)
+    ax2.plot([x_opt[0]], [y_opt[0]], marker='o', color='blue')
+    ax2.plot([target_x], [target_y], marker='x', color='blue')
     ax2.grid()
     
     # plot curve
     x_vals = np.linspace(-3, 3, 50)
     y_vals = curve_y(x_vals)
-    ax2.plot(x_vals, y_vals, '-', color='black')
+    ax2.plot(x_vals, y_vals, '-', color='black', alpha=0.4)
 
     plt.show()
 
