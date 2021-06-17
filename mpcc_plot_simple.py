@@ -30,10 +30,6 @@ def plot():
 
     w0, lbw, ubw, lbg, ubg = params
 
-    # w0 = init_ts + w0
-    # lbw = init_ts + lbw
-    # ubw = init_ts + ubw
-
     sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y))
     w_opt = sol['x'].full().flatten()
 
@@ -44,11 +40,11 @@ def plot():
     x_diff = [target_x - x for x in x_opt]
     y_diff = [target_y - y for y in y_opt]
 
-    x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
-    y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
-    a_line, = ax1.step(tgrid, [None] + list(aux_opt), '-.', color='green')
-    alpha_line, = ax1.step(tgrid, [None] + list(alphaux_opt), '-.', color='blue')
-    t_line, = ax1.step(tgrid, [None] + list(t_opt), '-.', color='purple')
+    ax1.plot(tgrid, x_diff, '-', color='gray')
+    ax1.plot(tgrid, y_diff, '-', color='black')
+    ax1.step(tgrid, [None] + list(aux_opt), '-.', color='green')
+    ax1.step(tgrid, [None] + list(alphaux_opt), '-.', color='blue')
+    ax1.step(tgrid, [None] + list(t_opt), '-.', color='purple')
 
     ax1.legend(['xt - x','yt - y','a', 'alpha', 't'])
     ax1.grid()
