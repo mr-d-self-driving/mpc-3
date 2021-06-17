@@ -164,22 +164,22 @@ def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
 
     return x_ts, y_ts, theta_ts, v_ts, omega_ts
 
-def onclick(event):
-    if event.inaxes == ax2:
+# def onclick(event):
+#     if event.inaxes == ax2:
 
-        ax1.cla()
-        ax2.cla()
-        xt, yt = event.xdata, event.ydata
-        print('x = %f, y = %f'%(xt, yt))
+#         ax1.cla()
+#         ax2.cla()
+#         xt, yt = event.xdata, event.ydata
+#         print('x = %f, y = %f'%(xt, yt))
 
-        plot(0, 1, xt, yt)
+#         plot(0, 1, xt, yt)
 
-        ax2.plot([xt], [yt], marker='x')
-        plt.draw()
+#         ax2.plot([xt], [yt], marker='x')
+#         plt.draw()
 
 # Initial point
 x_prev_ts, y_prev_ts, theta_prev_ts, v_prev_ts, omega_prev_ts = 0, 1, 0, 0, 0
-cid = fig.canvas.mpl_connect('button_press_event', onclick)
+# cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
 target_x, target_y = -1.0, -0.75
 dt = 0.25
