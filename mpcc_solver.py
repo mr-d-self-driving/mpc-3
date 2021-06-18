@@ -1,6 +1,6 @@
 from casadi import *
 
-def build_solver(curve_x, curve_y, init_ts):
+def build_solver(init_ts, p_degree):
     T = 10. # Time horizon
     N = 40 # number of control intervals
 
@@ -8,26 +8,29 @@ def build_solver(curve_x, curve_y, init_ts):
     c1 = 1 # scaling factor for getting to target
     c2 = 1 # scaling factor for following polynomial
 
-    xt = MX.sym('xt')
-    yt = MX.sym('yt')
+    xt = MX.sym('xt') # target x
+    yt = MX.sym('yt') # target y
+
+    xs = MX.sym('xs') # spline x
+    ys = MX.sym('ys') # spline y
+    ys = yt / (xt**p_degree) * xs**p_degree
 
     x = MX.sym('x')
     y = MX.sym('y')
     psi = MX.sym('psi')
     delta = MX.sym('delta')
     vx = MX.sym('vx')
-    omega = MX.sym('omega')
 
-    z = vertcat(x, y, psi, delta, vx, omega)
+    z = vertcat(x, y, psi, delta, vx, xs)
 
     alphaux = MX.sym('alphaux')
     aux = MX.sym('aux')
 
     u = vertcat(alphaux, aux)
 
-    zdot = vertcat(vx*cos(psi), vx*sin(psi), (vx/D)*tan(delta), alphaux, aux, omega)
+    zdot = vertcat(vx*cos(psi), vx*sin(psi), (vx/D)*tan(delta), alphaux, aux, xt/T)
 
-    L = c1*(x-xt)**2 + c1*(y-yt)**2 + aux**2 + alphaux**2 + c2*omega**2
+    L = c2*((x-xs)**2 + (y-ys)**2) + aux**2 + alphaux**2
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
@@ -69,9 +72,9 @@ def build_solver(curve_x, curve_y, init_ts):
         # New NLP variable for the control
         Uk = MX.sym('U_' + str(k), 2)
         w   += [Uk]
-        lbw += [-1, -1]
-        ubw += [ 1,  1]
-        w0  += [ 0,  0]
+        lbw += [-pi/8, -1]
+        ubw += [ pi/8,  1]
+        w0  += [    0,  0]
 
         # Integrate till the end of the interval
         Fk = F(x0=Xk, p=Uk)
@@ -81,9 +84,9 @@ def build_solver(curve_x, curve_y, init_ts):
         # New NLP variable for state at end of interval
         Xk = MX.sym('X_' + str(k+1), 6)
         w   += [Xk]
-        #        x      y    psi   delta  vx  omega
-        lbw += [-inf, -inf, -2*pi, -2*pi, -1, 0]
-        ubw += [ inf,  inf,  2*pi,  2*pi,  1, 1]
+        #        x      y    psi   delta  vx  xs
+        lbw += [-inf, -inf, -2*pi, -pi, -2, -inf]
+        ubw += [ inf,  inf,  2*pi,  pi,  1,  inf]
         w0  += [0, 0, 0, 0, 0, 0]
 
         # Add equality constraint
