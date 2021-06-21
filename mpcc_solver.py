@@ -7,39 +7,39 @@ def build_solver(init_ts):
 
     D = 1 # inter-axle distance
 
-    xt = MX.sym('xt') # target x
-    yt = MX.sym('yt') # target y
+    xt = SX.sym('xt') # target x
+    yt = SX.sym('yt') # target y
 
-    dt = xt/T
+    # dt = xt/T
 
-    x = MX.sym('x')
-    y = MX.sym('y')
-    psi = MX.sym('psi')
-    delta = MX.sym('delta')
-    vx = MX.sym('vx')
-    theta = MX.sym('theta')
+    x = SX.sym('x')
+    y = SX.sym('y')
+    psi = SX.sym('psi')
+    delta = SX.sym('delta')
+    vx = SX.sym('vx')
+    theta = SX.sym('theta')
 
     z = vertcat(x, y, psi, delta, vx, theta)
 
-    alphaux = MX.sym('alphaux')
-    aux = MX.sym('aux')
+    alphaux = SX.sym('alphaux')
+    aux = SX.sym('aux')
+    dt = SX.sym('dt')
 
-    u = vertcat(alphaux, aux)
+    u = vertcat(alphaux, aux, dt)
 
     zdot = vertcat(vx*cos(psi), vx*sin(psi), (vx/D)*tan(delta), alphaux, aux, vx*dt)
 
-    # t_dest = MX.sym('t_dest')
-    cx = MX.sym('cx', 3, 1)
-    cy = MX.sym('cy', 3, 1)
+    cx = SX.sym('cx', 3, 1)
+    cy = SX.sym('cy', 3, 1)
     contour_cost = gen_cost_func(2)
-    L = contour_cost(vertcat(x, y), theta, 1., cx, cy)
+    L = contour_cost(vertcat(x, y), theta, xt, cx, cy)
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
     DT = T/N/M
     f = Function('f', [z, u], [zdot, L])
-    X0 = MX.sym('X0', 6)
-    U = MX.sym('U', 2)
+    X0 = SX.sym('X0', 6)
+    U = SX.sym('U', 3)
     X = X0
     Q = 0
     for j in range(M):
@@ -62,7 +62,7 @@ def build_solver(init_ts):
     ubg = []
 
     # "Lift" initial conditions
-    Xk = MX.sym('X0', 6)
+    Xk = SX.sym('X0', 6)
     w += [Xk]
     
     lbw += init_ts
@@ -72,11 +72,11 @@ def build_solver(init_ts):
     # Formulate the NLP
     for k in range(N):
         # New NLP variable for the control
-        Uk = MX.sym('U_' + str(k), 2)
+        Uk = SX.sym('U_' + str(k), 3)
         w   += [Uk]
-        lbw += [-pi/8, -1]
-        ubw += [ pi/8,  1]
-        w0  += [    0,  0]
+        lbw += [-pi/8, -1, -1]
+        ubw += [ pi/8,  1,  1]
+        w0  += [    0,  0,  0]
 
         # Integrate till the end of the interval
         Fk = F(x0=Xk, p=Uk)
@@ -84,7 +84,7 @@ def build_solver(init_ts):
         J=J+Fk['qf']
 
         # New NLP variable for state at end of interval
-        Xk = MX.sym('X_' + str(k+1), 6)
+        Xk = SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
         #        x      y    psi   delta vx theta
         lbw += [-inf, -inf, -2*pi, -pi, -2, -inf]

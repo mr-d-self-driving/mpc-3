@@ -1,27 +1,30 @@
 from casadi import *
 
 def poly_deriv(coefs, order):
-    coef_d = MX.sym('c_deriv', order, 1)
+    coef_d = SX.sym('c_deriv', order, 1)
     
     for i in range(coef_d.shape[0]):
         coef_d[i] = (order - i) * coefs[i]
-    
-    #print(coef_d)
-    print(coef_d[0])
-    print(coef_d[1])
+
+    print('\n\n', coef_d, '\n\n')
     return coef_d
+    
+    # print('\n\n', vcat(coef_d), '\n\n')
+
+    # coef_d = [(order - i) * coefs[i] for i in range(order)]
+    # return vcat(coef_d)
 
 def gen_cost_func(order):
 
     npoly = order + 1
 
-    pos = MX.sym('pos', 2, 1)
+    pos = SX.sym('pos', 2, 1)
 
-    coefs_x = MX.sym('cx', npoly, 1)
-    coefs_y = MX.sym('cy', npoly, 1)
+    coefs_x = SX.sym('cx', npoly, 1)
+    coefs_y = SX.sym('cy', npoly, 1)
 
-    t = MX.sym('t')
-    t_dest = MX.sym('t_dest')
+    t = SX.sym('t')
+    t_dest = SX.sym('t_dest')
     
     deriv_coefs_x = poly_deriv(coefs_x, order)
     deriv_coefs_y = poly_deriv(coefs_y, order)
