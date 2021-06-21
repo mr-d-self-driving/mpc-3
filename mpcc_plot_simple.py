@@ -26,11 +26,11 @@ def plot():
 
         return x_opt, y_opt, alphaux_opt, aux_opt
     
-    solver, params = build_solver(init_ts, p_degree)
+    solver, params = build_solver(init_ts)
 
     w0, lbw, ubw, lbg, ubg = params
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y))
+    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y, vertcat(0, 1, 0), vertcat(1, 0, 0)))
     w_opt = sol['x'].full().flatten()
 
     x_opt, y_opt, alphaux_opt, aux_opt = sep_vals(w_opt)

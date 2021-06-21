@@ -1,36 +1,38 @@
 from casadi import *
+from mpcc_loss import gen_cost_func
 
-def build_solver(init_ts, p_degree):
+def build_solver(init_ts):
     T = 10. # Time horizon
     N = 40 # number of control intervals
 
     D = 1 # inter-axle distance
-    c1 = 1 # scaling factor for getting to target
-    c2 = 1 # scaling factor for following polynomial
 
     xt = MX.sym('xt') # target x
     yt = MX.sym('yt') # target y
 
-    xs = MX.sym('xs') # spline x
-    ys = MX.sym('ys') # spline y
-    ys = yt / (xt**p_degree) * xs**p_degree
+    dt = xt/T
 
     x = MX.sym('x')
     y = MX.sym('y')
     psi = MX.sym('psi')
     delta = MX.sym('delta')
     vx = MX.sym('vx')
+    theta = MX.sym('theta')
 
-    z = vertcat(x, y, psi, delta, vx, xs)
+    z = vertcat(x, y, psi, delta, vx, theta)
 
     alphaux = MX.sym('alphaux')
     aux = MX.sym('aux')
 
     u = vertcat(alphaux, aux)
 
-    zdot = vertcat(vx*cos(psi), vx*sin(psi), (vx/D)*tan(delta), alphaux, aux, xt/T)
+    zdot = vertcat(vx*cos(psi), vx*sin(psi), (vx/D)*tan(delta), alphaux, aux, vx*dt)
 
-    L = c2*((x-xs)**2 + (y-ys)**2) + aux**2 + alphaux**2
+    # t_dest = MX.sym('t_dest')
+    cx = MX.sym('cx', 3, 1)
+    cy = MX.sym('cy', 3, 1)
+    contour_cost = gen_cost_func(2)
+    L = contour_cost(vertcat(x, y), theta, 1., cx, cy)
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
@@ -84,7 +86,7 @@ def build_solver(init_ts, p_degree):
         # New NLP variable for state at end of interval
         Xk = MX.sym('X_' + str(k+1), 6)
         w   += [Xk]
-        #        x      y    psi   delta  vx  xs
+        #        x      y    psi   delta vx theta
         lbw += [-inf, -inf, -2*pi, -pi, -2, -inf]
         ubw += [ inf,  inf,  2*pi,  pi,  1,  inf]
         w0  += [0, 0, 0, 0, 0, 0]
@@ -95,7 +97,8 @@ def build_solver(init_ts, p_degree):
         ubg += [0, 0, 0, 0, 0, 0]
 
     # Create an NLP solver
-    prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g), 'p': vertcat(xt, yt)}
+    prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g), 'p': vertcat(xt, yt, cx, cy)}
     solver = nlpsol('solver', 'ipopt', prob)
+    print(solver)
 
     return solver, [w0, lbw, ubw, lbg, ubg]
