@@ -8,7 +8,7 @@ T = 10. # Time horizon
 N = 40 # number of control intervals
 
 fig, (ax1, ax2) =  plt.subplots(1, 2)
-init_ts = [0, 0, 0, 0, 0, 0]
+init_ts = [1, 1, 0, 0, 0, 0]
 target_x, target_y = 2, 2
 
 p_degree = 2
@@ -24,11 +24,11 @@ def plot():
 
         return x_opt, y_opt, theta_opt, alphaux_opt, aux_opt
     
-    solver, params = build_solver(init_ts)
+    solver, params = build_solver(init_ts, T, N)
 
     w0, lbw, ubw, lbg, ubg = params
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y, vertcat(0, 1, 0), vertcat(1, 0, 0)))
+    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y, vertcat(0, 1, 0), vertcat(0, 1, 0)))
     w_opt = sol['x'].full().flatten()
 
     x_opt, y_opt, theta_opt, alphaux_opt, aux_opt = sep_vals(w_opt)
