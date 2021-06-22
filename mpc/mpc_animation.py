@@ -23,11 +23,13 @@ num_targets = 0
 
 solver, params = build_solver(init_ts)
 
-def solve_mpc():
-
+def solve_mpc(w0_tmp=None):
+    global w_opt
     w0, lbw, ubw, lbg, ubg = params
 
-    w0 = init_ts + w0
+    if w0_tmp == None:
+        w0 = w_opt
+    else: w0 = w0_tmp + w0
     lbw = init_ts + lbw
     ubw = init_ts + ubw
 
@@ -36,8 +38,8 @@ def solve_mpc():
 
     return w_opt
 
-def solved_vals():
-    global solver, params
+def solved_vals(w0_tmp=None):
+    global solver, params, w_opt
 
     def sep_vals(lst):
         x_opt = lst[0::7]
@@ -50,7 +52,7 @@ def solved_vals():
 
         return [x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt]
 
-    w_opt = solve_mpc()
+    w_opt = solve_mpc(w0_tmp)
     opts = sep_vals(w_opt)
 
     return opts
@@ -73,7 +75,7 @@ def compute_step(init): # init = [x, y, theta, v, omega, a, alpha]
 # tgrid doesn't need to be recomputed
 tgrid = [T/N*k for k in range(N+1)]
 
-x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals()
+x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(init_ts)
 
 x_diff = [target_x - x for x in x_opt]
 y_diff = [target_y - y for y in y_opt]
@@ -104,7 +106,7 @@ step_traj, = ax2.plot([x_opt[0], ts[0]], [y_opt[0], ts[1]], '-', color='black')
 def gen():
     global keep_going, num_targets
     i = 0
-    while num_targets < 1:
+    while num_targets < 3:
         i += 1
         if not keep_going:
             num_targets += 1

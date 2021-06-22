@@ -4,4 +4,5 @@
 ![mpc](test_mpc.gif)
 
 ### Car contouring control
-![mpcc](test_mpcc.gif)
+- 3rd-degree polynomial
+![3_mpcc](test_mpcc.gif)

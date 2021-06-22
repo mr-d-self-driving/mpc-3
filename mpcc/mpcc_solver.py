@@ -26,6 +26,8 @@ def build_solver(init_ts, T, N, D, order):
     cx = cd.SX.sym('cx', order + 1, 1)
     cy = cd.SX.sym('cy', order + 1, 1)
     contour_cost = gen_cost_func(order)
+
+    # TODO: figure out what target theta should be
     L = contour_cost(cd.vertcat(x, y), aux, alphaux, dt, theta, xt, cx, cy)
 
     # Fixed step Runge-Kutta 4 integrator
@@ -68,8 +70,9 @@ def build_solver(init_ts, T, N, D, order):
         # New NLP variable for the control
         Uk = cd.SX.sym('U_' + str(k), 3)
         w   += [Uk]
-        lbw += [-cd.pi, -1, -1]
-        ubw += [ cd.pi,  1,  1]
+        #       alphaux aux dt
+        lbw += [-2*cd.pi, -1, -1]
+        ubw += [ 2*cd.pi,  1,  1]
         w0  += [     0,  0,  0]
 
         # Integrate till the end of the interval
@@ -81,8 +84,8 @@ def build_solver(init_ts, T, N, D, order):
         Xk = cd.SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
         #          x         y      phi    delta  vx theta
-        lbw += [-cd.inf, -cd.inf, -cd.pi, -cd.pi, -1, 0]
-        ubw += [ cd.inf,  cd.inf,  cd.pi,  cd.pi,  1, 1]
+        lbw += [-cd.inf, -cd.inf, -2*cd.pi, -cd.pi, -1, 0]
+        ubw += [ cd.inf,  cd.inf,  2*cd.pi,  cd.pi,  1, 1]
         w0  += [0, 0, 0, 0, 0, 0]
 
         # Add equality constraint
@@ -92,7 +95,6 @@ def build_solver(init_ts, T, N, D, order):
 
     # Create an NLP solver
     prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt, cx, cy)}
-    solver = cd.nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4})
-    print(solver)
+    solver = cd.nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4}) # 
 
     return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg]
