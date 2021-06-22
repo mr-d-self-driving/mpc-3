@@ -1,42 +1,39 @@
-from casadi import *
+import casadi as cd
 from mpcc_loss import gen_cost_func
 
-def build_solver(init_ts, T, N):
-    D = 1 # inter-axle distance
+def build_solver(init_ts, T, N, D, order):
 
-    xt = MX.sym('xt') # target x
-    yt = MX.sym('yt') # target y
+    xt = cd.SX.sym('xt') # target x
+    yt = cd.SX.sym('yt') # target y
 
-    # dt = xt/T
+    x = cd.SX.sym('x')
+    y = cd.SX.sym('y')
+    psi = cd.SX.sym('psi')
+    delta = cd.SX.sym('delta')
+    vx = cd.SX.sym('vx')
+    theta = cd.SX.sym('theta')
 
-    x = MX.sym('x')
-    y = MX.sym('y')
-    psi = MX.sym('psi')
-    delta = MX.sym('delta')
-    vx = MX.sym('vx')
-    theta = MX.sym('theta')
+    z = cd.vertcat(x, y, psi, delta, vx, theta)
 
-    z = vertcat(x, y, psi, delta, vx, theta)
+    alphaux = cd.SX.sym('alphaux')
+    aux = cd.SX.sym('aux')
+    dt = cd.SX.sym('dt')
 
-    alphaux = MX.sym('alphaux')
-    aux = MX.sym('aux')
-    dt = MX.sym('dt')
+    u = cd.vertcat(alphaux, aux, dt)
 
-    u = vertcat(alphaux, aux, dt)
+    zdot = cd.vertcat(vx*cd.cos(psi), vx*cd.sin(psi), (vx/D)*cd.tan(delta), alphaux, aux, vx*dt)
 
-    zdot = vertcat(vx*cos(psi), vx*sin(psi), (vx/D)*tan(delta), alphaux, aux, vx*dt)
-
-    cx = MX.sym('cx', 3, 1)
-    cy = MX.sym('cy', 3, 1)
-    contour_cost = gen_cost_func(2)
-    L = contour_cost(vertcat(x, y), theta, xt, cx, cy)
+    cx = cd.SX.sym('cx', order + 1, 1)
+    cy = cd.SX.sym('cy', order + 1, 1)
+    contour_cost = gen_cost_func(order)
+    L = contour_cost(cd.vertcat(x, y), aux, alphaux, dt, theta, xt, cx, cy)
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
     DT = T/N/M
-    f = Function('f', [z, u], [zdot, L])
-    X0 = MX.sym('X0', 6)
-    U = MX.sym('U', 3)
+    f = cd.Function('f', [z, u], [zdot, L])
+    X0 = cd.SX.sym('X0', 6)
+    U = cd.SX.sym('U', 3)
     X = X0
     Q = 0
     for j in range(M):
@@ -46,7 +43,7 @@ def build_solver(init_ts, T, N):
         k4, k4_q = f(X + DT * k3, U)
         X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
         Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
-    F = Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
+    F = cd.Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
 
     # Start with an empty NLP
     w=[]
@@ -59,7 +56,7 @@ def build_solver(init_ts, T, N):
     ubg = []
 
     # "Lift" initial conditions
-    Xk = MX.sym('X0', 6)
+    Xk = cd.SX.sym('X0', 6)
     w += [Xk]
     
     lbw += init_ts
@@ -69,11 +66,11 @@ def build_solver(init_ts, T, N):
     # Formulate the NLP
     for k in range(N):
         # New NLP variable for the control
-        Uk = MX.sym('U_' + str(k), 3)
+        Uk = cd.SX.sym('U_' + str(k), 3)
         w   += [Uk]
-        lbw += [-pi/8, -1, -1]
-        ubw += [ pi/8,  1,  1]
-        w0  += [    0,  0,  0]
+        lbw += [-cd.pi, -1, -1]
+        ubw += [ cd.pi,  1,  1]
+        w0  += [     0,  0,  0]
 
         # Integrate till the end of the interval
         Fk = F(x0=Xk, p=Uk)
@@ -81,11 +78,11 @@ def build_solver(init_ts, T, N):
         J=J+Fk['qf']
 
         # New NLP variable for state at end of interval
-        Xk = MX.sym('X_' + str(k+1), 6)
+        Xk = cd.SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
-        #        x      y    psi   delta vx theta
-        lbw += [-inf, -inf, -2*pi, -pi, -2, -inf]
-        ubw += [ inf,  inf,  2*pi,  pi,  1,  inf]
+        #          x         y      psi    delta  vx theta
+        lbw += [-cd.inf, -cd.inf, -cd.pi, -cd.pi, -1, 0]
+        ubw += [ cd.inf,  cd.inf,  cd.pi,  cd.pi,  1, 1]
         w0  += [0, 0, 0, 0, 0, 0]
 
         # Add equality constraint
@@ -94,8 +91,8 @@ def build_solver(init_ts, T, N):
         ubg += [0, 0, 0, 0, 0, 0]
 
     # Create an NLP solver
-    prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g), 'p': vertcat(xt, yt, cx, cy)}
-    solver = nlpsol('solver', 'ipopt', prob)
+    prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt, cx, cy)}
+    solver = cd.nlpsol('solver', 'ipopt', prob)
     print(solver)
 
     return solver, [w0, lbw, ubw, lbg, ubg]

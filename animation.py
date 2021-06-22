@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import matplotlib.animation as animation
-from casadi import *
+import casadi as cd
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
@@ -31,7 +31,7 @@ def solve_mpc():
     lbw = init_ts + lbw
     ubw = init_ts + ubw
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=vertcat(target_x, target_y))
+    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(target_x, target_y))
     w_opt = sol['x'].full().flatten()
 
     return w_opt
@@ -64,7 +64,7 @@ def compute_step(init): # init = [x, y, theta, v, omega, a, alpha]
     dtheta = omega*dt + (1/2)*alpha*(dt**2)
 
     theta_ts = theta + dtheta
-    dx, dy = ds*cos(theta_ts), ds*sin(theta_ts)
+    dx, dy = ds*cd.cos(theta_ts), ds*cd.sin(theta_ts)
 
     x_ts, y_ts = x + dx, y + dy
 

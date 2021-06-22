@@ -1,34 +1,34 @@
-from casadi import *
+import casadi as cd
 
 T = 10. # Time horizon
 N = 40 # number of control intervals
 
 def build_solver(init_ts):
-    xt = MX.sym('xt')
-    yt = MX.sym('yt')
+    xt = cd.MX.sym('xt')
+    yt = cd.MX.sym('yt')
 
-    xs = MX.sym('xs')
-    ys = MX.sym('ys')
-    theta = MX.sym('theta')
-    v = MX.sym('v')
-    w = MX.sym('w')
+    xs = cd.MX.sym('xs')
+    ys = cd.MX.sym('ys')
+    theta = cd.MX.sym('theta')
+    v = cd.MX.sym('v')
+    w = cd.MX.sym('w')
 
-    x = vertcat(xs, ys, theta, v, w)
+    x = cd.vertcat(xs, ys, theta, v, w)
 
-    a = MX.sym('a')
-    alpha = MX.sym('alpha')
-    u = vertcat(a, alpha)
+    a = cd.MX.sym('a')
+    alpha = cd.MX.sym('alpha')
+    u = cd.vertcat(a, alpha)
 
-    xdot = vertcat(v*cos(theta), v*sin(theta), w, a, alpha)
+    xdot = cd.vertcat(v*cd.cos(theta), v*cd.sin(theta), w, a, alpha)
 
     L = (xs-xt)**2 + (ys-yt)**2 + a**2 + alpha**2
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
     DT = T/N/M
-    f = Function('f', [x, u], [xdot, L])
-    X0 = MX.sym('X0', 5)
-    U = MX.sym('U', 2)
+    f = cd.Function('f', [x, u], [xdot, L])
+    X0 = cd.MX.sym('X0', 5)
+    U = cd.MX.sym('U', 2)
     X = X0
     Q = 0
     for j in range(M):
@@ -38,7 +38,7 @@ def build_solver(init_ts):
         k4, k4_q = f(X + DT * k3, U)
         X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
         Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
-    F = Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
+    F = cd.Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
 
     # Start with an empty NLP
     w=[]
@@ -51,7 +51,7 @@ def build_solver(init_ts):
     ubg = []
 
     # "Lift" initial conditions
-    Xk = MX.sym('X0', 5)
+    Xk = cd.MX.sym('X0', 5)
     w += [Xk]
     
     lbw += init_ts
@@ -61,7 +61,7 @@ def build_solver(init_ts):
     # Formulate the NLP
     for k in range(N):
         # New NLP variable for the control
-        Uk = MX.sym('U_' + str(k), 2)
+        Uk = cd.MX.sym('U_' + str(k), 2)
         w   += [Uk]
         lbw += [-1, -1]
         ubw += [ 1,  1]
@@ -73,10 +73,10 @@ def build_solver(init_ts):
         J=J+Fk['qf']
 
         # New NLP variable for state at end of interval
-        Xk = MX.sym('X_' + str(k+1), 5)
+        Xk = cd.MX.sym('X_' + str(k+1), 5)
         w   += [Xk]
-        lbw += [-inf, -inf, -2*pi, -1, -1]
-        ubw += [ inf,  inf,  2*pi, 1,  1]
+        lbw += [-cd.inf, -cd.inf, -2*cd.pi, -1, -1]
+        ubw += [ cd.inf,  cd.inf,  2*cd.pi, 1,  1]
         w0  += [0, 0, 0, 0, 0]
 
         # Add equality constraint
@@ -85,7 +85,7 @@ def build_solver(init_ts):
         ubg += [0, 0, 0, 0, 0]
 
     # Create an NLP solver
-    prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g), 'p': vertcat(xt, yt)}
-    solver = nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4});
+    prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt)}
+    solver = cd.nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4});
 
     return solver, [w0[5:], lbw[5:], ubw[5:], lbg, ubg]
