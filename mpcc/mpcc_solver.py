@@ -8,12 +8,12 @@ def build_solver(init_ts, T, N, D, order):
 
     x = cd.SX.sym('x')
     y = cd.SX.sym('y')
-    psi = cd.SX.sym('psi')
+    phi = cd.SX.sym('phi')
     delta = cd.SX.sym('delta')
     vx = cd.SX.sym('vx')
     theta = cd.SX.sym('theta')
 
-    z = cd.vertcat(x, y, psi, delta, vx, theta)
+    z = cd.vertcat(x, y, phi, delta, vx, theta)
 
     alphaux = cd.SX.sym('alphaux')
     aux = cd.SX.sym('aux')
@@ -21,7 +21,7 @@ def build_solver(init_ts, T, N, D, order):
 
     u = cd.vertcat(alphaux, aux, dt)
 
-    zdot = cd.vertcat(vx*cd.cos(psi), vx*cd.sin(psi), (vx/D)*cd.tan(delta), alphaux, aux, vx*dt)
+    zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/D)*cd.tan(delta), alphaux, aux, vx*dt)
 
     cx = cd.SX.sym('cx', order + 1, 1)
     cy = cd.SX.sym('cy', order + 1, 1)
@@ -80,7 +80,7 @@ def build_solver(init_ts, T, N, D, order):
         # New NLP variable for state at end of interval
         Xk = cd.SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
-        #          x         y      psi    delta  vx theta
+        #          x         y      phi    delta  vx theta
         lbw += [-cd.inf, -cd.inf, -cd.pi, -cd.pi, -1, 0]
         ubw += [ cd.inf,  cd.inf,  cd.pi,  cd.pi,  1, 1]
         w0  += [0, 0, 0, 0, 0, 0]
@@ -92,7 +92,7 @@ def build_solver(init_ts, T, N, D, order):
 
     # Create an NLP solver
     prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt, cx, cy)}
-    solver = cd.nlpsol('solver', 'ipopt', prob)
+    solver = cd.nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4})
     print(solver)
 
-    return solver, [w0, lbw, ubw, lbg, ubg]
+    return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg]

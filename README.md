@@ -1,4 +1,7 @@
 # Model Predictive Control
 
-#### toy unicycle MPC
-![uni](test.gif)
+### Toy unicycle mpc
+![mpc](test_mpc.gif)
+
+### Car contouring control
+![mpcc](test_mpcc.gif)

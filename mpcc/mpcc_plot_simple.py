@@ -1,4 +1,4 @@
-from mpcc_solver import build_solver
+from mpcc.mpcc_solver import build_solver
 
 import casadi as cd
 import matplotlib.pyplot as plt
@@ -11,14 +11,14 @@ D = 1   # inter-axle distance
 
 fig, (ax1, ax2) =  plt.subplots(1, 2)
 
-xs, ys = 0, 0
-xt, yt = 2, 4
-        # [x, y, psi, delta, vx, theta]
-init_ts = [xs, ys, 0, 0, 0, 0]
+xs, ys = -0.26, 0
+xt, yt = 2, 3
+        # [x, y, phi, delta, vx, theta]
+init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
 
-# # 3rd-order
-# xpts = [xs] + [0, 1] + [xt]
-# ypts = [ys] + [1, 2] + [yt]
+# 3rd-order
+xpts = [xs] + [0, 1] + [xt]
+ypts = [ys] + [1, 2] + [yt]
 
 # # 2nd-order
 # xpts = [xs] + [1] + [xt]
@@ -28,7 +28,7 @@ init_ts = [xs, ys, 0, 0, 0, 0]
 # xpts = [xs] + [1, 2] + [xt]
 # ypts = [ys] + [1, 2] + [yt]
 
-order = 2
+order = 3
 
 def gen_t(pts1, pts2):
     tpts = [0]
@@ -53,6 +53,10 @@ def plot():
     solver, params = build_solver(init_ts, T, N, D, order)
 
     w0, lbw, ubw, lbg, ubg = params
+
+    w0 = init_ts + w0
+    lbw = init_ts + lbw
+    ubw = init_ts + ubw
 
     tpts = gen_t(xpts, ypts)
     print('\n\n')

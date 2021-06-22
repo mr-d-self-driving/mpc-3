@@ -104,7 +104,7 @@ step_traj, = ax2.plot([x_opt[0], ts[0]], [y_opt[0], ts[1]], '-', color='black')
 def gen():
     global keep_going, num_targets
     i = 0
-    while num_targets < 3:
+    while num_targets < 1:
         i += 1
         if not keep_going:
             num_targets += 1
@@ -145,7 +145,7 @@ def update(i):
     return [x_line, y_line, a_line, alpha_line, uni_traj, uni_pt, step_traj]
 
 writergif = animation.PillowWriter(fps=30)
-anim = animation.FuncAnimation(fig, update, interval=100, frames=gen)
-anim.save('test.gif', writer=writergif)
+anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
+anim.save('test_mpc.gif', writer=writergif)
 
 # plt.show()
