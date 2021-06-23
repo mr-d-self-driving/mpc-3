@@ -8,7 +8,7 @@ import numpy as np
 
 T = 10. # Time horizon
 N = 40  # number of control intervals
-D = 1   # inter-axle distance
+D = 1.   # inter-axle distance
 
 ts = .033 # time-step
 e = 0.07
@@ -18,14 +18,23 @@ num_targets = 0
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-# 3rd-order
-xs, ys = -0.26, 0
-xt, yt = 2, 3
+# 5th-order
+xs, ys = 0, 0
+xt, yt = 3, 3
         # [x, y, phi, delta, vx, theta]
-init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
-xpts = [xs] + [0, 1] + [xt]
-ypts = [ys] + [1, 2] + [yt]
-order = 3
+init_ts = [xs, ys, cd.pi/3, 0, 0, 0]
+xpts = [xs] + [1, 2] + [xt]
+ypts = [ys] + [2, 4] + [yt]
+order = 5
+
+# # 3rd-order
+# xs, ys = -0.26, 0
+# xt, yt = 2, 3
+#         # [x, y, phi, delta, vx, theta]
+# init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
+# xpts = [xs] + [0, 1] + [xt]
+# ypts = [ys] + [1, 2] + [yt]
+# order = 3
 
 # # 1st-order
 # xs, ys = 0, 0
@@ -44,7 +53,7 @@ yc = list(ypoly)
 
 print(xc, yc)
 
-solver, params = build_solver(init_ts, T, N, D, order)
+solver, params = build_solver(init_ts, T, N, D, order, xpoly, ypoly)
 
 def solve_mpcc(w0_tmp=None):
     global w_opt
@@ -127,8 +136,7 @@ def update(i):
 
 def init_plot():
     global t_grid
-    global x_line, y_line, aux_line, alphaux_line
-    global curr_pt, target_pt, traj
+    global x_line, y_line, aux_line, alphaux_line, curr_pt, target_pt, traj
     global init_ts, xt, yt, num_targets, keep_going
     global x_opt, y_opt, psi_opt, delta_opt, vx_opt, theta_opt, alphaux_opt, aux_opt, dt_opt
 
@@ -166,9 +174,19 @@ def init_plot():
     ax2.grid()
 
 init_plot()
+# TODO: delete this print
+# print('\n\n w0')
+# nine_elem = []
+# for i, v in enumerate(w_opt):
+#     if (i+1) % 9 == 0:
+#         print(nine_elem + [v])
+#         nine_elem = []
+#     else: nine_elem.append(v)
+# print(nine_elem)
+# print('\n\n')
 
-writergif = animation.PillowWriter(fps=30)
-anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
+# writergif = animation.PillowWriter(fps=30)
+# anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
 # anim.save('test_mpcc.gif', writer=writergif)
 
 plt.show()

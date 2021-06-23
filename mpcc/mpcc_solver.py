@@ -1,7 +1,18 @@
-import casadi as cd
 from mpcc_loss import gen_cost_func
+import numpy as np
+import casadi as cd
+import random as rd
 
-def build_solver(init_ts, T, N, D, order):
+def merge_dict(x, y):
+    """Given two dictionaries, merge them into a new dict as a shallow copy."""
+    z = x.copy()
+    z.update(y)
+    return z
+
+def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
+
+    print(xpoly)
+    print(ypoly)
 
     xt = cd.SX.sym('xt') # target x
     yt = cd.SX.sym('yt') # target y
@@ -23,12 +34,12 @@ def build_solver(init_ts, T, N, D, order):
 
     zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/D)*cd.tan(delta), alphaux, aux, vx*dt)
 
-    cx = cd.SX.sym('cx', order + 1, 1)
-    cy = cd.SX.sym('cy', order + 1, 1)
+    xc = cd.SX.sym('xc', order + 1, 1)
+    yc = cd.SX.sym('yc', order + 1, 1)
     contour_cost = gen_cost_func(order)
 
     # TODO: figure out what target theta should be
-    L = contour_cost(cd.vertcat(x, y), aux, alphaux, dt, theta, xt, cx, cy)
+    L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1., cx=xc, cy=yc)['cost']
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
@@ -70,31 +81,62 @@ def build_solver(init_ts, T, N, D, order):
         # New NLP variable for the control
         Uk = cd.SX.sym('U_' + str(k), 3)
         w   += [Uk]
-        #       alphaux aux dt
-        lbw += [-2*cd.pi, -1, -1]
-        ubw += [ 2*cd.pi,  1,  1]
-        w0  += [     0,  0,  0]
+        #       alphaux  aux  dt
+        lbw += [-2*cd.pi, -1, 0]
+        ubw += [ 2*cd.pi,  1, 1]
+        w0  += [rd.randint(-628, 628)/1000., rd.randint(-100, 100)/1000., rd.randint(0, 100)/1000.]
 
         # Integrate till the end of the interval
         Fk = F(x0=Xk, p=Uk)
         Xk_end = Fk['xf']
         J=J+Fk['qf']
 
+        kf = float(k)
+        theta_tmp = kf/(N-1)
+        dtheta = 0.2
+
         # New NLP variable for state at end of interval
         Xk = cd.SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
-        #          x         y      phi    delta  vx theta
-        lbw += [-cd.inf, -cd.inf, -2*cd.pi, -cd.pi, -1, 0]
-        ubw += [ cd.inf,  cd.inf,  2*cd.pi,  cd.pi,  1, 1]
-        w0  += [0, 0, 0, 0, 0, 0]
+        #          x         y       phi     delta   vx theta
+        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+        x_tmp, y_tmp = xpoly(theta_tmp), ypoly(theta_tmp)
+        phi_tmp = cd.arctan((ypoly(theta_tmp + dtheta) - y_tmp)/(xpoly(theta_tmp + dtheta) - x_tmp))
+        w0  += [xpoly(theta_tmp), ypoly(theta_tmp), phi_tmp, 0, rd.randint(0, 200)/1000., theta_tmp]
 
         # Add equality constraint
         g   += [Xk_end-Xk]
         lbg += [0, 0, 0, 0, 0, 0]
         ubg += [0, 0, 0, 0, 0, 0]
 
+    # TODO: delete this print
+    print('\n\n w0')
+    nine_elem = []
+    for i, v in enumerate(w0):
+        if (i+1) % 9 == 0:
+            print(nine_elem + [v])
+            nine_elem = []
+        else: nine_elem.append(v)
+    print(nine_elem)
+    print('\n\n')
+
     # Create an NLP solver
-    prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt, cx, cy)}
-    solver = cd.nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4}) # 
+    solver_opts = {}
+    solver_opts['print_time'] = 0
+    solver_opts['ipopt.print_level'] = 0
+    solver_opts['ipopt.max_cpu_time'] = .4
+
+    warm_start_opts = {}
+    warm_start_opts['ipopt.warm_start_init_point'] = 'yes'
+    warm_start_opts['ipopt.mu_init'] = .0001
+    warm_start_opts['ipopt.warm_start_bound_push'] = 1e-9
+    warm_start_opts['ipopt.warm_start_bound_frac'] = 1e-9
+    warm_start_opts['ipopt.warm_start_slack_bound_frac'] = 1e-9
+    warm_start_opts['ipopt.warm_start_slack_bound_push'] = 1e-9
+    warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
+
+    prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt, xc, yc)}
+    solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts)) #
 
     return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg]

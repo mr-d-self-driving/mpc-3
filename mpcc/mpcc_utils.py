@@ -12,6 +12,9 @@ def gen_t(pts1, pts2):
 
 def compute_step(init, ts, D): # init = [x, y, phi, delta, vx, theta, alphaux, aux, dt]
     x, y, phi, delta, v, theta, alpha, a, dt = init
+
+    # print('\n')
+    # print(theta, dt)
     
     x_ts = x + v*cd.cos(phi)*ts
     y_ts = y + v*cd.sin(phi)*ts
