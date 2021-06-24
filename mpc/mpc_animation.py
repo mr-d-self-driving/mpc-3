@@ -1,4 +1,4 @@
-from mpc.mpc_solver import build_solver
+from mpc_solver import build_solver
 
 import random
 import numpy as np
@@ -81,14 +81,13 @@ x_diff = [target_x - x for x in x_opt]
 y_diff = [target_y - y for y in y_opt]
 
 ax1.set_ylim([-2.0, 2.0])
-
-ax1.legend(['xt - x','yt - y','a', 'alpha'])
 ax1.grid()
 
 x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
 y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
 a_line, = ax1.step(tgrid, [None] + list(a_opt), '-.', color='green')
 alpha_line, = ax1.step(tgrid, [None] + list(alpha_opt), '-.', color='blue')
+ax1.legend(['xt - x','yt - y','a', 'alpha'])
 
 ax2.set_ylim([-2, 2])
 ax2.set_xlim([-2, 2])
@@ -140,8 +139,8 @@ def update(i):
     init_ts = ts
 
     if abs(init_ts[0]-target_x) < e and abs(init_ts[1]-target_y) < e:
-        keep_going = False
         target_x, target_y = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
+        keep_going = False
         target_pt.set_data([target_x], [target_y])
     
     return [x_line, y_line, a_line, alpha_line, uni_traj, uni_pt, step_traj]
