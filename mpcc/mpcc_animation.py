@@ -20,7 +20,7 @@ fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
 # 5th-order
 xs, ys = 0, 0
-xt, yt = 3, 2
+xt, yt = 3.3, 2
         # [x, y, phi, delta, vx, theta]
 init_ts = [xs, ys, cd.pi/3, 0, 0, 0]
 xpts = [xs] + [.5, 2] + [xt]
@@ -208,6 +208,6 @@ init_plot()
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-# anim.save('test_mpcc_1.gif', writer=writergif)
+anim.save('test_mpcc_1.gif', writer=writergif)
 
-plt.show()
+# plt.show()
