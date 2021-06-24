@@ -8,7 +8,7 @@ import numpy as np
 
 T = 10. # Time horizon
 N = 40  # number of control intervals
-D = 1.   # inter-axle distance
+D = 0.5   # inter-axle distance
 
 ts = .033 # time-step
 e = 0.07
@@ -20,12 +20,21 @@ fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
 # 5th-order
 xs, ys = 0, 0
-xt, yt = 3, 3
+xt, yt = 3, 2
         # [x, y, phi, delta, vx, theta]
 init_ts = [xs, ys, cd.pi/3, 0, 0, 0]
-xpts = [xs] + [1, 2] + [xt]
-ypts = [ys] + [2, 4] + [yt]
+xpts = [xs] + [.5, 2] + [xt]
+ypts = [ys] + [1, 3] + [yt]
 order = 5
+
+# # 5th-order
+# xs, ys = 0, 0
+# xt, yt = 3, 3
+#         # [x, y, phi, delta, vx, theta]
+# init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
+# xpts = [xs] + [1, 2] + [xt]
+# ypts = [ys] + [2, 2.5] + [yt]
+# order = 5
 
 # # 3rd-order
 # xs, ys = -0.26, 0
@@ -34,6 +43,15 @@ order = 5
 # init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
 # xpts = [xs] + [0, 1] + [xt]
 # ypts = [ys] + [1, 2] + [yt]
+# order = 3
+
+# # 3rd-order
+# xs, ys = -0.3, 0
+# xt, yt = 2, 3
+#         # [x, y, phi, delta, vx, theta]
+# init_ts = [xs, ys, 2*cd.pi/3, 0, 0, 0]
+# xpts = [xs] + [0, 1] + [xt]
+# ypts = [ys] + [1.5, 1.75] + [yt]
 # order = 3
 
 # # 1st-order
@@ -48,10 +66,10 @@ order = 5
 tpts = gen_t(xpts, ypts)
 xpoly = np.polynomial.polynomial.Polynomial.fit(tpts, xpts, order)
 ypoly = np.polynomial.polynomial.Polynomial.fit(tpts, ypts, order)
-xc = list(xpoly)
-yc = list(ypoly)
+cx = list(xpoly)[::-1]
+cy = list(ypoly)[::-1]
 
-print(xc, yc)
+print(cx, cy)
 
 solver, params = build_solver(init_ts, T, N, D, order, xpoly, ypoly)
 
@@ -65,8 +83,11 @@ def solve_mpcc(w0_tmp=None):
     lbw = init_ts + lbw
     ubw = init_ts + ubw
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, xc, yc))
+    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
+    cost = sol['f'].full().flatten()
+    # print(cost)
     w_opt = sol['x'].full().flatten()
+    # print(w_opt)
 
     return w_opt
 
@@ -185,8 +206,8 @@ init_plot()
 # print(nine_elem)
 # print('\n\n')
 
-# writergif = animation.PillowWriter(fps=30)
-# anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-# anim.save('test_mpcc.gif', writer=writergif)
+writergif = animation.PillowWriter(fps=30)
+anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
+# anim.save('test_mpcc_1.gif', writer=writergif)
 
 plt.show()

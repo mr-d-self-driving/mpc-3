@@ -1,4 +1,4 @@
-from mpc_solver import build_solver
+from mpc.mpc_solver import build_solver
 
 import random
 import numpy as np

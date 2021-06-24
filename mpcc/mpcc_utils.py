@@ -23,6 +23,6 @@ def compute_step(init, ts, D): # init = [x, y, phi, delta, vx, theta, alphaux, a
     v_ts = v + a*ts
     theta_ts = theta + v*dt*ts
 
-    # print('\n', dt, '\n')
+    # print('\n', x, y, v, a, '\n')
 
     return [x_ts, y_ts, phi_ts, delta_ts, v_ts, theta_ts]

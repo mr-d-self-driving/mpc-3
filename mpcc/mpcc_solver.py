@@ -1,4 +1,6 @@
 from mpcc_loss import gen_cost_func
+from os import system
+import os
 import numpy as np
 import casadi as cd
 import random as rd
@@ -39,7 +41,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     contour_cost = gen_cost_func(order)
 
     # TODO: figure out what target theta should be
-    L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1., cx=xc, cy=yc)['cost']
+    L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
@@ -102,7 +104,8 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
         ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
         x_tmp, y_tmp = xpoly(theta_tmp), ypoly(theta_tmp)
-        phi_tmp = cd.arctan((ypoly(theta_tmp + dtheta) - y_tmp)/(xpoly(theta_tmp + dtheta) - x_tmp))
+        theta_step = theta_tmp + dtheta
+        phi_tmp = cd.arctan((ypoly(theta_step) - y_tmp)/(xpoly(theta_step) - x_tmp))
         w0  += [xpoly(theta_tmp), ypoly(theta_tmp), phi_tmp, 0, rd.randint(0, 200)/1000., theta_tmp]
 
         # Add equality constraint
@@ -111,15 +114,15 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         ubg += [0, 0, 0, 0, 0, 0]
 
     # TODO: delete this print
-    print('\n\n w0')
-    nine_elem = []
-    for i, v in enumerate(w0):
-        if (i+1) % 9 == 0:
-            print(nine_elem + [v])
-            nine_elem = []
-        else: nine_elem.append(v)
-    print(nine_elem)
-    print('\n\n')
+    # print('\n\n w0')
+    # nine_elem = []
+    # for i, v in enumerate(w0):
+    #     if (i+1) % 9 == 0:
+    #         print(nine_elem + [v])
+    #         nine_elem = []
+    #     else: nine_elem.append(v)
+    # print(nine_elem)
+    # print('\n\n')
 
     # Create an NLP solver
     solver_opts = {}
@@ -137,6 +140,10 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
 
     prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt, xc, yc)}
-    solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts)) #
+    solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts))
+
+    # solver.generate_dependencies('nlp.c')                                        
+    # system('gcc -fPIC -shared -O1 nlp.c -o nlp.so')
+    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'))
 
     return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg]

@@ -37,7 +37,7 @@ def gen_cost_func(order):
     
     inputs = [pos, a, alpha, dt, t, t_dest, coefs_x, coefs_y]
     labels = ['pos', 'a', 'alpha', 'dt', 't', 't_dest', 'cx', 'cy']
-    outputs = [e_c + e_l + (t - t_dest)**2 + a**2 + alpha**2 + dt**2]
+    outputs = [10.*e_c + 1.*e_l + .3*(t - t_dest)**2 + 1.*(a**2) + 1.*(alpha**2) + 1.*(dt**2)]
 
     control_cost = cd.Function('state_costs', inputs, outputs, labels, ['cost'])
     return control_cost
