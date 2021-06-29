@@ -78,14 +78,19 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     ubw += init_ts
     w0  += init_ts
 
+    lbw += [-2*cd.pi, -1, 0, -cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0] * N
+    ubw += [ 2*cd.pi,  1, 1,  cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1] * N
+    lbg += [0, 0, 0, 0, 0, 0] * N
+    ubg += [0, 0, 0, 0, 0, 0] * N
+
     # Formulate the NLP
     for k in range(N):
         # New NLP variable for the control
         Uk = cd.SX.sym('U_' + str(k), 3)
         w   += [Uk]
         #       alphaux  aux  dt
-        lbw += [-2*cd.pi, -1, 0]
-        ubw += [ 2*cd.pi,  1, 1]
+        # lbw += [-2*cd.pi, -1, 0]
+        # ubw += [ 2*cd.pi,  1, 1]
         w0  += [rd.randint(-628, 628)/1000., rd.randint(-100, 100)/1000., rd.randint(0, 100)/1000.]
 
         # Integrate till the end of the interval
@@ -101,8 +106,8 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         Xk = cd.SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
         #          x         y       phi     delta   vx theta
-        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
-        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+        # lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+        # ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
         x_tmp, y_tmp = xpoly(theta_tmp), ypoly(theta_tmp)
         theta_step = theta_tmp + dtheta
         phi_tmp = cd.arctan((ypoly(theta_step) - y_tmp)/(xpoly(theta_step) - x_tmp))
@@ -110,19 +115,8 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
 
         # Add equality constraint
         g   += [Xk_end-Xk]
-        lbg += [0, 0, 0, 0, 0, 0]
-        ubg += [0, 0, 0, 0, 0, 0]
-
-    # TODO: delete this print
-    # print('\n\n w0')
-    # nine_elem = []
-    # for i, v in enumerate(w0):
-    #     if (i+1) % 9 == 0:
-    #         print(nine_elem + [v])
-    #         nine_elem = []
-    #     else: nine_elem.append(v)
-    # print(nine_elem)
-    # print('\n\n')
+        # lbg += [0, 0, 0, 0, 0, 0]
+        # ubg += [0, 0, 0, 0, 0, 0]
 
     # Create an NLP solver
     solver_opts = {}
@@ -143,7 +137,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts))
 
     # solver.generate_dependencies('nlp.c')                                        
-    # system('gcc -fPIC -shared -O1 nlp.c -o nlp.so')
-    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'))
+    # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
+    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
 
     return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg]

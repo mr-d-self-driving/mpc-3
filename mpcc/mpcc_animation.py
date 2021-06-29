@@ -81,18 +81,21 @@ def solve_mpcc(w0_tmp=None):
     global w_opt, time_y, time_x
     w0, lbw, ubw, lbg, ubg = params
 
-    if w0_tmp == None:
-        w0 = w_opt
+    if w0_tmp == None: w0 = w_opt
     else: w0 = w0_tmp + w0
+
     lbw = init_ts + lbw
     ubw = init_ts + ubw
 
     time_before_sol = time.time()
+
     sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
+
     time_after_sol = time.time()
     diff_sol = time_after_sol - time_before_sol
-    time_y.append(diff_sol) # diff_sol
+    time_y.append(diff_sol)
     time_x.append(time_x[-1]+1)
+
     # cost = sol['f'].full().flatten()
     w_opt = sol['x'].full().flatten()
 
@@ -102,17 +105,11 @@ def solved_vals(w0_tmp=None):
     global solver, params, w_opt
 
     def sep_vals(lst):
-        x_opt = lst[0::9]
-        y_opt = lst[1::9]
-        psi_opt = lst[2::9]
-        delta_opt = lst[3::9]
-        vx_opt = lst[4::9]
-        theta_opt = lst[5::9]
-        alphaux_opt = lst[6::9]
-        aux_opt = lst[7::9]
-        dt_opt = lst[8::9]
+        opts = [[] for _ in range(9)]
+        for i, val in enumerate(lst):
+            opts[i % 9] += [val]
 
-        return [x_opt, y_opt, psi_opt, delta_opt, vx_opt, theta_opt, alphaux_opt, aux_opt, dt_opt]
+        return opts
     
     w_opt = solve_mpcc(w0_tmp)
     opts = sep_vals(w_opt)
@@ -177,8 +174,8 @@ def init_plot():
     ax1.set_ylim([-5, 5])
     x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
     y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
-    aux_line, = ax1.step(tgrid, [None] + list(aux_opt), '-.', color='green')
-    alphaux_line, = ax1.step(tgrid, [None] + list(alphaux_opt), '-.', color='blue')
+    aux_line, = ax1.step(tgrid, [None] + aux_opt, '-.', color='green')
+    alphaux_line, = ax1.step(tgrid, [None] + alphaux_opt, '-.', color='blue')
 
     ax1.legend(['xt - x','yt - y', 'a_x^u', 'alpha_x^u'])
     ax1.set_xlabel('Time horizon')
@@ -209,6 +206,6 @@ init_plot()
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save('test_mpcc.gif', writer=writergif)
+# anim.save('test_mpcc.gif', writer=writergif)
 
-# plt.show()
+plt.show()
