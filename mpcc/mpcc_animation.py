@@ -1,5 +1,5 @@
-from mpcc_solver import build_solver
-from mpcc_utils import gen_t, compute_step
+from mpcc.mpcc_solver import build_solver
+from mpcc.mpcc_utils import gen_t, compute_step
 
 import time
 import casadi as cd

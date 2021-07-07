@@ -1,7 +1,4 @@
-from mpcc_loss import gen_cost_func
-from os import system
-import os
-import numpy as np
+from mpcc.mpcc_loss import gen_cost_func
 import casadi as cd
 import random as rd
 
@@ -40,7 +37,6 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     yc = cd.SX.sym('yc', order + 1, 1)
     contour_cost = gen_cost_func(order)
 
-    # TODO: figure out what target theta should be
     L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']
 
     # Fixed step Runge-Kutta 4 integrator
@@ -58,6 +54,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         k4, k4_q = f(X + DT * k3, U)
         X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
         Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
+
     F = cd.Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
 
     # Start with an empty NLP
@@ -78,10 +75,10 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     ubw += init_ts
     w0  += init_ts
 
-    lbw += [-2*cd.pi, -1, 0, -cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0] * N
-    ubw += [ 2*cd.pi,  1, 1,  cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1] * N
-    lbg += [0, 0, 0, 0, 0, 0] * N
-    ubg += [0, 0, 0, 0, 0, 0] * N
+    # lbw += [-2*cd.pi, -1, 0, -cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0] * N
+    # ubw += [ 2*cd.pi,  1, 1,  cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1] * N
+    # lbg += [0, 0, 0, 0, 0, 0] * N
+    # ubg += [0, 0, 0, 0, 0, 0] * N
 
     # Formulate the NLP
     for k in range(N):
@@ -89,8 +86,8 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         Uk = cd.SX.sym('U_' + str(k), 3)
         w   += [Uk]
         #       alphaux  aux  dt
-        # lbw += [-2*cd.pi, -1, 0]
-        # ubw += [ 2*cd.pi,  1, 1]
+        lbw += [-2*cd.pi, -1, 0]
+        ubw += [ 2*cd.pi,  1, 1]
         w0  += [rd.randint(-628, 628)/1000., rd.randint(-100, 100)/1000., rd.randint(0, 100)/1000.]
 
         # Integrate till the end of the interval
@@ -106,8 +103,8 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         Xk = cd.SX.sym('X_' + str(k+1), 6)
         w   += [Xk]
         #          x         y       phi     delta   vx theta
-        # lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
-        # ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
         x_tmp, y_tmp = xpoly(theta_tmp), ypoly(theta_tmp)
         theta_step = theta_tmp + dtheta
         phi_tmp = cd.arctan((ypoly(theta_step) - y_tmp)/(xpoly(theta_step) - x_tmp))
@@ -115,8 +112,8 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
 
         # Add equality constraint
         g   += [Xk_end-Xk]
-        # lbg += [0, 0, 0, 0, 0, 0]
-        # ubg += [0, 0, 0, 0, 0, 0]
+        lbg += [0, 0, 0, 0, 0, 0]
+        ubg += [0, 0, 0, 0, 0, 0]
 
     # Create an NLP solver
     solver_opts = {}
