@@ -4,7 +4,7 @@ import casadi as cd
 import random as rd
 import numpy as np
 
-def build_collocation(init_ts, T, N, D, order, xpoly, ypoly):
+def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     # Degree of interpolating polynomial
     d = 3
 
