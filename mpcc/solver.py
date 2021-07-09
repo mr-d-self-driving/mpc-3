@@ -1,12 +1,7 @@
-from mpcc.mpcc_loss import gen_cost_func
+from mpcc.loss import gen_cost_func
+from mpcc.utils import merge_dict
 import casadi as cd
 import random as rd
-
-def merge_dict(x, y):
-    """Given two dictionaries, merge them into a new dict as a shallow copy."""
-    z = x.copy()
-    z.update(y)
-    return z
 
 def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
 

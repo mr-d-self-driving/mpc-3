@@ -26,3 +26,9 @@ def compute_step(init, ts, D): # init = [x, y, phi, delta, vx, theta, alphaux, a
     # print('\n', x, y, v, a, '\n')
 
     return [x_ts, y_ts, phi_ts, delta_ts, v_ts, theta_ts]
+
+def merge_dict(x, y):
+    """Given two dictionaries, merge them into a new dict as a shallow copy."""
+    z = x.copy()
+    z.update(y)
+    return z

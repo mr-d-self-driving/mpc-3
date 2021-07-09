@@ -1,10 +1,13 @@
-from mpcc.mpcc_loss import gen_cost_func
+from mpcc.loss import gen_cost_func
+from mpcc.utils import merge_dict
+from os import system
 
+import os
 import casadi as cd
 import random as rd
 import numpy as np
 
-def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
+def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     # Degree of interpolating polynomial
     d = 3
 
@@ -40,6 +43,9 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         pint = np.polyint(p)
         B[j] = pint(1.0)
 
+    xt = cd.SX.sym('xt') # target x
+    yt = cd.SX.sym('yt') # target y
+
     x = cd.SX.sym('x')
     y = cd.SX.sym('y')
     phi = cd.SX.sym('phi')
@@ -55,7 +61,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
 
     u = cd.vertcat(alphaux, aux, dt)
 
-    zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/D)*cd.tan(delta), alphaux, aux, vx*dt)
+    zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/inter_axle)*cd.tan(delta), alphaux, aux, vx*dt)
 
     xc = cd.SX.sym('xc', order + 1, 1)
     yc = cd.SX.sym('yc', order + 1, 1)
@@ -80,38 +86,36 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     ubg = []
 
     # For plotting x and u given w
-    x_plot = []
+    coord_plot = []
     u_plot = []
 
     # "Lift" initial conditions
     Xk = cd.SX.sym('X0', 6)
     w += [Xk]
-    
     lbw += init_ts
     ubw += init_ts
-    w0  += init_ts
-
-    x_plot.append(Xk)
+    w0 += init_ts
+    coord_plot += [Xk]
 
     # Formulate the NLP
     for k in range(N):
         # New NLP variable for the control
-        Uk = cd.MX.sym('U_' + str(k))
-        w.append(Uk)
-        lbw.append([-1])
-        ubw.append([1])
-        w0.append([0])
-        u_plot.append(Uk)
+        Uk = cd.SX.sym('U_' + str(k), 3)
+        w += [Uk]
+        lbw += [-2*cd.pi, -1, 0]
+        ubw += [ 2*cd.pi,  1, 1]
+        w0 += [0, 0, 0]
+        u_plot += [Uk]
 
         # State at collocation points
         Xc = []
         for j in range(d):
-            Xkj = cd.MX.sym('X_'+str(k)+'_'+str(j), 2)
-            Xc.append(Xkj)
-            w.append(Xkj)
-            lbw.append([-0.25, -np.inf])
-            ubw.append([np.inf,  np.inf])
-            w0.append([0, 0])
+            Xkj = cd.SX.sym('X_'+str(k)+'_'+str(j), 6)
+            Xc += [Xkj]
+            w += [Xkj]
+            lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+            ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+            w0 += [0, 0, 0, 0, 0, 0]
 
         # Loop over collocation points
         Xk_end = D[0]*Xk
@@ -122,9 +126,9 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
 
             # Append collocation equations
             fj, qj = f(Xc[j-1],Uk)
-            g.append(h*fj - xp)
-            lbg.append([0, 0])
-            ubg.append([0, 0])
+            g += [h*fj - xp]
+            lbg += [0, 0, 0, 0, 0, 0]
+            ubg += [0, 0, 0, 0, 0, 0]
 
             # Add contribution to the end state
             Xk_end = Xk_end + D[j]*Xc[j-1];
@@ -133,31 +137,48 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
             J = J + B[j]*qj*h
 
         # New NLP variable for state at end of interval
-        Xk = cd.MX.sym('X_' + str(k+1), 6)
-        w.append(Xk)
-        lbw.append([-0.25, -np.inf])
-        ubw.append([np.inf,  np.inf])
-        w0.append([0, 0])
-        x_plot.append(Xk)
+        Xk = cd.SX.sym('X_' + str(k+1), 6)
+        w += [Xk]
+        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+        w0 += [0, 0, 0, 0, 0, 0]
+        coord_plot += [Xk]
 
         # Add equality constraint
-        g.append(Xk_end-Xk)
-        lbg.append([0, 0])
-        ubg.append([0, 0])
+        g += [Xk_end-Xk]
+        lbg += [0, 0, 0, 0, 0, 0]
+        ubg += [0, 0, 0, 0, 0, 0]
 
     # Concatenate vectors
     w = cd.vertcat(*w)
     g = cd.vertcat(*g)
-    x_plot = cd.horzcat(*x_plot)
+    coord_plot = cd.horzcat(*coord_plot)
     u_plot = cd.horzcat(*u_plot)
-    w0 = np.concatenate(w0)
-    lbw = np.concatenate(lbw)
-    ubw = np.concatenate(ubw)
-    lbg = np.concatenate(lbg)
-    ubg = np.concatenate(ubg)
 
     # Create an NLP solver
-    prob = {'f': J, 'x': w, 'g': g}
-    solver = cd.nlpsol('solver', 'ipopt', prob);
+    solver_opts = {}
+    solver_opts['print_time'] = 0
+    solver_opts['ipopt.print_level'] = 0
+    solver_opts['ipopt.max_cpu_time'] = .4
 
-    return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg]
+    warm_start_opts = {}
+    warm_start_opts['ipopt.warm_start_init_point'] = 'yes'
+    warm_start_opts['ipopt.mu_init'] = .0001
+    warm_start_opts['ipopt.warm_start_bound_push'] = 1e-9
+    warm_start_opts['ipopt.warm_start_bound_frac'] = 1e-9
+    warm_start_opts['ipopt.warm_start_slack_bound_frac'] = 1e-9
+    warm_start_opts['ipopt.warm_start_slack_bound_push'] = 1e-9
+    warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
+
+    # Create an NLP solver
+    # prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
+    # solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts));
+
+    # solver.generate_dependencies('nlp.c')                                        
+    # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
+    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+
+    # Function to get x and u trajectories from w
+    trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])
+
+    return solver_comp, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories

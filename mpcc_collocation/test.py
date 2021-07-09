@@ -20,7 +20,8 @@
 #     License along with CasADi; if not, write to the Free Software
 #     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
-from mpcc.mpcc_loss import gen_cost_func
+from mpcc.loss import gen_cost_func
+from mpcc.utils import gen_t
 import casadi as cd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -64,36 +65,52 @@ for j in range(d+1):
 T = 10.
 inter_axle = .5
 
-xt = 2
-yt = 3
+# 3rd-order
+xs, ys = -0.3, 0
+xt, yt = 2, 3
+        # [x, y, phi, delta, vx, theta]
+init_ts = [xs, ys, 2*cd.pi/3, 0, 0, 0]
+xpts = [xs] + [0, 1] + [xt]
+ypts = [ys] + [1.5, 1.75] + [yt]
+order = 3
 
-# xc = [-0.9384644717337829, 0.33812985545835283, 2.0884644717337832, 0.5118701445416473]
-# yc = [1.0667002902085416, -0.14467955068929803, 0.4332997097914584, 1.6446795506892977]
-# order = 3
+tpts = gen_t(xpts, ypts)
+xpoly = np.polynomial.polynomial.Polynomial.fit(tpts, xpts, order)
+ypoly = np.polynomial.polynomial.Polynomial.fit(tpts, ypts, order)
+xc = list(xpoly)[::-1]
+yc = list(ypoly)[::-1]
+
+# init_ts = cd.SX.sym('init_ts', 6)
+# x_init = cd.SX.sym('x_init')
+# y_init = cd.SX.sym('x_init')
+# phi_init = cd.SX.sym('x_init')
+# delta_init = cd.SX.sym('x_init')
+# v_init = cd.SX.sym('x_init')
+# theta_init = cd.SX.sym('x_init')
 
 x = cd.SX.sym('x')
 y = cd.SX.sym('y')
 phi = cd.SX.sym('phi')
 delta = cd.SX.sym('delta')
 vx = cd.SX.sym('vx')
-# theta = cd.SX.sym('theta')
+theta = cd.SX.sym('theta')
 
-z = cd.vertcat(x, y, phi, delta, vx)
+z = cd.vertcat(x, y, phi, delta, vx, theta)
 
 alphaux = cd.SX.sym('alphaux')
 aux = cd.SX.sym('aux')
-# dt = cd.SX.sym('dt')
+dt = cd.SX.sym('dt')
 
-u = cd.vertcat(alphaux, aux)
+u = cd.vertcat(alphaux, aux, dt)
 
-zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/inter_axle)*cd.tan(delta), alphaux, aux)
+zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/inter_axle)*cd.tan(delta), alphaux, aux, vx*dt)
 
 # xc = cd.SX.sym('xc', order + 1, 1)
 # yc = cd.SX.sym('yc', order + 1, 1)
-# contour_cost = gen_cost_func(order)
-# L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']
+contour_cost = gen_cost_func(order)
+L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']
 
-L = (x-xt)**2 + (y-yt)**2 + alphaux**2 + aux**2
+# L = (x-xt)**2 + (y-yt)**2 + alphaux**2 + aux**2
 
 # Continuous time dynamics
 f = cd.Function('f', [z, u], [zdot, L])
@@ -113,37 +130,38 @@ lbg = []
 ubg = []
 
 # For plotting x and u given w
-x_plot = []
+coord_plot = []
 u_plot = []
 
 # "Lift" initial conditions
-Xk = cd.SX.sym('X0', 5)
-w.append(Xk)
-lbw.append([-.3, 0, 0, 0, 0])
-ubw.append([-.3, 0, 0, 0, 0])
-w0.append([-.3, 0, 0, 0, 0])
-x_plot.append(Xk)
+Xk = cd.SX.sym('X0', 6)
+w += [Xk]
+# init_ts = [x_init, y_init, phi_init, delta_init, v_init, theta_init]
+lbw += init_ts
+ubw += init_ts
+w0 += init_ts
+coord_plot += [Xk]
 
 # Formulate the NLP
 for k in range(N):
     # New NLP variable for the control
-    Uk = cd.SX.sym('U_' + str(k), 2)
-    w.append(Uk)
-    lbw.append([-2*cd.pi, -1])
-    ubw.append([ 2*cd.pi,  1])
-    w0.append([0, 0])
-    u_plot.append(Uk)
+    Uk = cd.SX.sym('U_' + str(k), 3)
+    w += [Uk]
+    lbw += [-2*cd.pi, -1, 0]
+    ubw += [ 2*cd.pi,  1, 1]
+    w0 += [0, 0, 0]
+    u_plot += [Uk]
 
     # State at collocation points
     Xc = []
 
     for j in range(d):
-        Xkj = cd.SX.sym('X_'+str(k)+'_'+str(j), 5)
-        Xc.append(Xkj)
-        w.append(Xkj)
-        lbw.append([-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0])
-        ubw.append([ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2])
-        w0.append([0, 0, 0, 0, 0])
+        Xkj = cd.SX.sym('X_'+str(k)+'_'+str(j), 6)
+        Xc += [Xkj]
+        w += [Xkj]
+        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+        w0 += [0, 0, 0, 0, 0, 0]
 
     # Loop over collocation points
     Xk_end = D[0]*Xk
@@ -154,9 +172,9 @@ for k in range(N):
 
         # Append collocation equations
         fj, qj = f(Xc[j-1], Uk)
-        g.append(h*fj - xp)
-        lbg.append([0, 0, 0, 0, 0])
-        ubg.append([0, 0, 0, 0, 0])
+        g += [h*fj - xp]
+        lbg += [0, 0, 0, 0, 0, 0]
+        ubg += [0, 0, 0, 0, 0, 0]
 
         # Add contribution to the end state
         Xk_end = Xk_end + D[j]*Xc[j-1];
@@ -165,60 +183,67 @@ for k in range(N):
         J = J + B[j]*qj*h
 
     # New NLP variable for state at end of interval
-    Xk = cd.SX.sym('X_' + str(k+1), 5)
-    w.append(Xk)
-    lbw.append([-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0])
-    ubw.append([ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2])
-    w0.append([0, 0, 0, 0, 0])
-    x_plot.append(Xk)
+    Xk = cd.SX.sym('X_' + str(k+1), 6)
+    w += [Xk]
+    lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
+    ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
+    w0 += [0, 0, 0, 0, 0, 0]
+    coord_plot += [Xk]
 
     # Add equality constraint
-    g.append(Xk_end-Xk)
-    lbg.append([0, 0, 0, 0, 0])
-    ubg.append([0, 0, 0, 0, 0])
+    g += [Xk_end-Xk]
+    lbg += [0, 0, 0, 0, 0, 0]
+    ubg += [0, 0, 0, 0, 0, 0]
 
 # Concatenate vectors
 w = cd.vertcat(*w)
 g = cd.vertcat(*g)
-x_plot = cd.horzcat(*x_plot)
+coord_plot = cd.horzcat(*coord_plot)
 u_plot = cd.horzcat(*u_plot)
-w0 = np.concatenate(w0)
-lbw = np.concatenate(lbw)
-ubw = np.concatenate(ubw)
-lbg = np.concatenate(lbg)
-ubg = np.concatenate(ubg)
+# w0 = np.concatenate(w0)
+# lbw = np.concatenate(lbw)
+# ubw = np.concatenate(ubw)
+# lbg = np.concatenate(lbg)
+# ubg = np.concatenate(ubg)
 
 # Create an NLP solver
-prob = {'f': J, 'x': w, 'g': g} # 'p': cd.vertcat(xt, yt, xc, yc)
+prob = {'f': J, 'x': w, 'g': g} # 'p': cd.vertcat(xt, yt, xc, yc)  
 solver = cd.nlpsol('solver', 'ipopt', prob);
 
 # Function to get x and u trajectories from w
-trajectories = cd.Function('trajectories', [w], [x_plot, u_plot], ['w'], ['x', 'u'])
+trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])
 
 # Solve the NLP
+# x_i, y_i, phi_i, delta_i, v_i, theta_i = init_ts_true
 sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg)
-x_opt, u_opt = trajectories(sol['x'])
-x_opt = x_opt.full() # to numpy array
+state_opt, u_opt = trajectories(sol['x'])
+state_opt = state_opt.full() # to numpy array
 u_opt = u_opt.full() # to numpy array
 
 # Plot the result
 tgrid = np.linspace(0, T, N+1)
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 # plt.clf()
-x_diff = [xt - x for x in x_opt[0]]
-y_diff = [yt - y for y in x_opt[1]]
+x_diff = [xt - x for x in state_opt[0]]
+y_diff = [yt - y for y in state_opt[1]]
 ax1.plot(tgrid, x_diff, '-', color='gray')
 ax1.plot(tgrid, y_diff, '-', color='black')
-ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='green')
-ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='blue')
+ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='green')
+ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='blue')
 plt.xlabel('t')
 ax1.legend(['xt - x','yt - y', 'a_x^u', 'alpha_x^u'])
 ax1.grid()
 ax1.set_ylim([-5, 5])
 
-ax2.plot(x_opt[0], x_opt[1], '-', color='green', alpha=0.4)
-ax2.plot([x_opt[0][0]], [x_opt[1][0]], marker='o', color='blue')
+ax2.plot(state_opt[0], state_opt[1], '-', color='green', alpha=0.4)
+ax2.plot([state_opt[0][0]], [state_opt[1][0]], marker='o', color='blue')
 ax2.plot([xt], [yt], marker='x', color='blue')
+
+ax2.scatter(xpts, ypts, color='grey', s=15)
+tplt = np.linspace(0, 1)
+xplt = xpoly(tplt)
+yplt = ypoly(tplt)
+ax2.plot(xplt, yplt, '-.', color='grey')
 
 ax2.set_ylim([-5, 5])
 ax2.set_xlim([-5, 5])
