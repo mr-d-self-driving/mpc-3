@@ -74,23 +74,20 @@ cy = list(ypoly)[::-1]
 print(cx, cy)
 
 solver, params, trajectories = build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly)
+_, lbw_suffix, ubw_suffix, lbg, ubg = params
 
 time_y = [None]
 time_x = [0]
 
-def solve_mpcc(w0_tmp=None):
-    global time_y, time_x, w_opt
-    w0, lbw, ubw, lbg, ubg = params
+def solve_mpcc():
+    global time_y, time_x, sol
 
-    if w0_tmp is None: w0 = w_opt
-    else: w0 = w0_tmp + w0
-
-    lbw = init_ts + lbw
-    ubw = init_ts + ubw
+    lbw = init_ts + lbw_suffix
+    ubw = init_ts + ubw_suffix
 
     time_before_sol = time.time()
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
+    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
 
     time_after_sol = time.time()
     diff_sol = time_after_sol - time_before_sol
@@ -98,7 +95,7 @@ def solve_mpcc(w0_tmp=None):
     time_x.append(time_x[-1]+1)
 
     # cost = sol['f'].full().flatten()
-    w_opt = sol['x'].full().flatten()
+
     state_opt, u_opt = trajectories(sol['x'])
     state_opt = state_opt.full() # to numpy array
     u_opt = u_opt.full() # to numpy array
@@ -146,53 +143,64 @@ def update(i):
     
     return [x_line, y_line, aux_line, alphaux_line, traj, curr_pt]
 
-def init_plot():
-    global t_grid
-    global x_line, y_line, aux_line, alphaux_line, curr_pt, target_pt, traj
-    global init_ts, xt, yt, num_targets, keep_going, time_pts
+tgrid = [T/N*k for k in range(N+1)]
 
-    tgrid = [T/N*k for k in range(N+1)]
+w0, lbw, ubw, lbg, ubg = params
+w0 = init_ts + w0
+lbw = init_ts + lbw
+ubw = init_ts + ubw
 
-    state_opt, u_opt = solve_mpcc(w0_tmp=init_ts)
+time_before_sol = time.time()
 
-    x_diff = [xt - x for x in state_opt[0]]
-    y_diff = [yt - y for y in state_opt[1]]
+sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
 
-    ax1.set_ylim([-5, 5])
-    x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
-    y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
-    aux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='green')
-    alphaux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='blue')
+time_after_sol = time.time()
+diff_sol = time_after_sol - time_before_sol
+time_y.append(diff_sol)
+time_x.append(time_x[-1]+1)
 
-    ax1.legend(['xt - x','yt - y', 'a_x^u', 'alpha_x^u'])
-    ax1.set_xlabel('Time horizon')
-    ax1.grid()
+# cost = sol['f'].full().flatten()
+w_opt = sol['x'].full().flatten()
+state_opt, u_opt = trajectories(sol['x'])
+state_opt = state_opt.full() # to numpy array
+u_opt = u_opt.full() # to numpy array
 
-    ax2.set_ylim([-5, 5])
-    ax2.set_xlim([-5, 5])
-    ax2.set_xlabel('x')
+x_diff = [xt - x for x in state_opt[0]]
+y_diff = [yt - y for y in state_opt[1]]
 
-    # plot curve
-    ax2.scatter(xpts, ypts, color='grey', s=15)
-    tplt = np.linspace(0, 1)
-    xplt = xpoly(tplt)
-    yplt = ypoly(tplt)
-    ax2.plot(xplt, yplt, '-.', color='grey')
+ax1.set_ylim([-5, 5])
+x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
+y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
+aux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='green')
+alphaux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='blue')
 
-    traj, = ax2.plot(state_opt[0], state_opt[1], '-', color='green', alpha=0.4)
-    curr_pt, = ax2.plot([state_opt[0][0]], [state_opt[1][0]], marker='o', color='blue')    
-    target_pt, = ax2.plot([xt], [yt], marker='x', color='blue')
-    ax2.grid()
+ax1.legend(['xt - x','yt - y', 'a_x^u', 'alpha_x^u'])
+ax1.set_xlabel('Time horizon')
+ax1.grid()
 
-    ax3.set_xlim([0, 200])
-    ax3.set_ylim([0, .25])
-    time_pts, = ax3.plot(time_x, time_y, 'o', color='blue', lw=.2, alpha=0.3)
-    ax3.grid(axis='y')
+ax2.set_ylim([-5, 5])
+ax2.set_xlim([-5, 5])
+ax2.set_xlabel('x')
 
-init_plot()
+# plot curve
+ax2.scatter(xpts, ypts, color='grey', s=15)
+tplt = np.linspace(0, 1)
+xplt = xpoly(tplt)
+yplt = ypoly(tplt)
+ax2.plot(xplt, yplt, '-.', color='grey')
+
+traj, = ax2.plot(state_opt[0], state_opt[1], '-', color='green', alpha=0.4)
+curr_pt, = ax2.plot([state_opt[0][0]], [state_opt[1][0]], marker='o', color='blue')    
+target_pt, = ax2.plot([xt], [yt], marker='x', color='blue')
+ax2.grid()
+
+ax3.set_xlim([0, 200])
+ax3.set_ylim([0, .25])
+time_pts, = ax3.plot(time_x, time_y, 'o', color='blue', lw=.2, alpha=0.3)
+ax3.grid(axis='y')
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save('test_mpcc_colloc_3_time.gif', writer=writergif)
+# anim.save('test_mpcc_colloc_3_time.gif', writer=writergif)
 
-# plt.show()
+plt.show()
