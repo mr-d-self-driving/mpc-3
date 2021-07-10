@@ -171,14 +171,14 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
 
     # Create an NLP solver
-    # prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
-    # solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts));
+    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
+    solver = cd.nlpsol('solver', 'ipopt', prob, warm_start_opts);
 
     # solver.generate_dependencies('nlp.c')                                        
     # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
-    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])
 
-    return solver_comp, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
+    return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
