@@ -27,6 +27,11 @@ def compute_step(init, ts, D): # init = [x, y, phi, delta, vx, theta, alphaux, a
 
     return [x_ts, y_ts, phi_ts, delta_ts, v_ts, theta_ts]
 
+def compute_cost_step(init, cost_func, xc, yc, ts):
+    x, y, phi, delta, v, theta, alpha, a, dt = init
+    cost = cost_func(pos=cd.vertcat(x, y), a=a, alpha=alpha, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']*ts
+    return cost
+
 def merge_dict(x, y):
     """Given two dictionaries, merge them into a new dict as a shallow copy."""
     z = x.copy()

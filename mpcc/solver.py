@@ -1,13 +1,13 @@
 from mpcc.loss import gen_cost_func
 from mpcc.utils import merge_dict
+from os import system
+
+import os
 import casadi as cd
 import random as rd
 
 def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
-
-    print(xpoly)
-    print(ypoly)
-
+    
     xt = cd.SX.sym('xt') # target x
     yt = cd.SX.sym('yt') # target y
 
@@ -121,7 +121,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     solver_opts = {}
     solver_opts['print_time'] = 0
     solver_opts['ipopt.print_level'] = 0
-    solver_opts['ipopt.max_cpu_time'] = .4
+    solver_opts['ipopt.max_cpu_time'] = .5
 
     warm_start_opts = {}
     warm_start_opts['ipopt.warm_start_init_point'] = 'yes'
@@ -133,13 +133,13 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
 
     prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
-    solver = cd.nlpsol('solver', 'ipopt', prob, warm_start_opts)
+    solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts))
 
-    # solver.generate_dependencies('nlp.c')                                        
-    # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
-    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+    solver.generate_dependencies('nlp.c')                                        
+    system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
+    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])
 
-    return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
+    return solver_comp, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
