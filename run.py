@@ -1,2 +1,1 @@
-import mpcc_collocation.animation
-# import mpcc.mpcc_animation
+import mpcc.animation
