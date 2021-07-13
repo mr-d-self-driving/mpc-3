@@ -6,6 +6,7 @@ import os
 import casadi as cd
 import random as rd
 import numpy as np
+import matplotlib.pyplot as plt
 
 def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     # Degree of interpolating polynomial
@@ -155,6 +156,11 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     coord_plot = cd.horzcat(*coord_plot)
     u_plot = cd.horzcat(*u_plot)
 
+    # plot sparsity
+    sg = cd.sum1(g)
+    sparsity = cd.jacobian(cd.jacobian(sg, w), w).sparsity()
+    plt.imsave('sparsity_colloc.png', np.array(sparsity))
+
     # Create an NLP solver
     solver_opts = {}
     solver_opts['print_time'] = 0
@@ -176,9 +182,9 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
 
     # solver.generate_dependencies('nlp.c')                                        
     # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
-    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])
 
-    return solver_comp, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
+    return solver, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
