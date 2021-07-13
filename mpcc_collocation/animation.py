@@ -1,5 +1,5 @@
 from casadi.casadi import diff
-from mpcc.solver import build_solver
+from mpcc_collocation.solver import build_solver
 from mpcc.utils import compute_cost_step, gen_t, compute_step
 from mpcc.loss import gen_cost_func
 
@@ -257,6 +257,6 @@ cost_txt = ax5.text(.05, .2, 'True cost: ' + str(true_cost), fontsize=fs)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save('test_mpcc.gif', writer=writergif)
+# anim.save('test_mpcc.gif', writer=writergif)
 
-# plt.show()
+plt.show()
