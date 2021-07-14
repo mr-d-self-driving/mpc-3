@@ -1,5 +1,5 @@
 from casadi.casadi import diff
-from mpcc_collocation.solver import build_solver
+from mpcc_colloc.solver import build_solver
 from mpcc.utils import compute_cost_step, gen_t, compute_step
 from mpcc.loss import gen_cost_func
 
@@ -128,7 +128,6 @@ def gen():
             print(num_targets)
             keep_going = True
         yield i
-
 
 def onClick(event):
     global pause
