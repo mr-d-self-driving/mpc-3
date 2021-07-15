@@ -52,22 +52,25 @@ def prep_df(fn1, fn2):
 
     return df1, df2
 
-def interpolate(df1, df2):
+def interpolate(df1, df2, cn='time'):
     column_names = list(df2.columns)
     df2_tmp = df2.values.tolist()
-    for time in df1['time'].values:
-        if time not in df2['time'].values:
+    for time in df1[cn].values:
+        if time not in df2[cn].values:
             df2_tmp.append([time, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
 
-    df2_fin = pd.DataFrame(df2_tmp, columns=column_names).sort_values('time')
+    df2_fin = pd.DataFrame(df2_tmp, columns=column_names).sort_values(cn)
     df2_fin = df2_fin.reset_index(drop=True)
+    df2_fin.index = df2_fin[cn]
+    del df2_fin[cn]
     df2_fin = df2_fin.interpolate()
+    df2_fin.reset_index(level=0, inplace=True)
     return df2_fin
 
-def compare_costs(df1, df2):
-    column_names = ['time', 'pred_cost', 'true_cost']
+def compare_costs(df1, df2, cn='time'):
+    column_names = [cn, 'pred_cost', 'true_cost']
     data = []
-    for i, t in enumerate(df1['time'].values):
+    for i, t in enumerate(df1[cn].values):
         df1_cost = df1.iloc[i]['cost']
         tmp = df2.time[df2.time == t].index.tolist()
         df2_cost = df2.iloc[tmp[0]]['cost']
