@@ -1,24 +1,33 @@
 from casadi.casadi import diff
-from mpcc_colloc.solver import build_solver
-from mpcc.utils import compute_cost_step, gen_t, compute_step
+from mpcc_rk4.solver import build_solver
+from mpcc.utils import compare_costs, compute_cost_step, gen_t, compute_step, interpolate, prep_df
 from mpcc.loss import gen_cost_func
 
 import time
+import csv
 import casadi as cd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
 import numpy as np
+import mpcc.config as cfg
 
-T = 10. # Time horizon
-N = 40  # number of control intervals
-inter_axle = 0.5   # inter-axle distance
+pred = open(cfg.pred_csv, 'w', newline='')
+pred_writer = csv.writer(pred)
+pred_writer.writerow(['time', 'x', 'y', 'phi', 'delta', 'v', 'theta', 'cost'])
 
-ts = .033 # time-step
-e = 0.07
+true = open(cfg.true_csv, 'w', newline='')
+true_writer = csv.writer(true)
+true_writer.writerow(['time', 'x', 'y', 'phi', 'delta', 'v', 'theta', 'cost'])
+
+T = cfg.T
+N = cfg.N
+inter_axle = cfg.inter_axle
+
+ts = cfg.ts
+e = cfg.e
 
 keep_going = True
-pause = False
 num_targets = 0
 
 fig = plt.figure(figsize=(15, 10))
@@ -30,50 +39,12 @@ ax4 = plt.subplot(gs[7:11, 6:11])
 ax5 = plt.subplot(gs[0:3, 6:11])
 # fig, ((ax1, ax3), (ax2, ax4)) =  plt.subplots(2, 2, figsize=(12, 10))
 
-# # 5th-order
-# xs, ys = 0, 0
-# xt, yt = 3.3, 2
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/3, 0, 0, 0]
-# xpts = [xs] + [.5, 2] + [xt]
-# ypts = [ys] + [1, 3] + [yt]
-# order = 5
-
-# # 5th-order
-# xs, ys = 0, 0
-# xt, yt = 3, 3
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
-# xpts = [xs] + [1, 2] + [xt]
-# ypts = [ys] + [2, 2.5] + [yt]
-# order = 5
-
-# # 3rd-order
-# xs, ys = -0.26, 0
-# xt, yt = 2, 3
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
-# xpts = [xs] + [0, 1] + [xt]
-# ypts = [ys] + [1, 2] + [yt]
-# order = 3
-
-# 3rd-order
-xs, ys = -0.3, 0
-xt, yt = 2, 3
-        # [x, y, phi, delta, vx, theta]
-init_ts = [xs, ys, 2*cd.pi/3, 0, 0, 0]
-xpts = [xs] + [0, 1] + [xt]
-ypts = [ys] + [1.5, 1.75] + [yt]
-order = 3
-
-# # 1st-order
-# xs, ys = 0, 0
-# xt, yt = 2, 2 
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/4, 0, 0, 0]
-# xpts = [xs] + [1] + [xt]
-# ypts = [ys] + [1] + [yt]
-# order = 1
+curve = cfg.curve_dict
+xpts, ypts = curve['xpts'], curve['ypts']
+order = curve['order']
+xs, ys = xpts[0], ypts[0]
+xt, yt = xpts[-1], ypts[-1]
+init_ts = curve['init_ts']
 
 tpts = gen_t(xpts, ypts)
 xpoly = np.polynomial.polynomial.Polynomial.fit(tpts, xpts, order)
@@ -93,8 +64,11 @@ time_x = [0]
 cost_y = [None]
 true_cost = 0
 
+pred_time = 0
+true_time = 0
+
 def solve_mpcc():
-    global time_y, time_x, cost_y, sol
+    global time_y, time_x, cost_y, sol, pred_time
 
     lbw = init_ts + lbw_suffix
     ubw = init_ts + ubw_suffix
@@ -107,6 +81,7 @@ def solve_mpcc():
     diff_sol = time_after_sol - time_before_sol
     time_y.append(diff_sol)
     time_x.append(time_x[-1]+1)
+    pred_time += diff_sol
 
     cost = sol['f'].full().flatten()
     cost_y.append(cost[0])
@@ -120,21 +95,16 @@ def solve_mpcc():
 def gen():
     global keep_going, num_targets
     i = 0
-    while num_targets < 1:
-        if not pause:
-            i += 1
+    while num_targets < cfg.num_targets_final:
+        i += 1
         if not keep_going:
             num_targets += 1
             print(num_targets)
             keep_going = True
         yield i
 
-def onClick(event):
-    global pause
-    pause ^= True
-
 def update(i):
-    global init_ts, keep_going, true_cost
+    global init_ts, keep_going, true_cost, true_time
 
     state_opt, u_opt = solve_mpcc()
 
@@ -154,6 +124,7 @@ def update(i):
     cost_pts.set_offsets(np.c_[time_x, cost_y])
 
     init = [state_opt[0][0], state_opt[1][0], state_opt[2][0], state_opt[3][0], state_opt[4][0], state_opt[5][0], u_opt[0][0], u_opt[1][0], u_opt[2][0]]
+    pred_writer.writerow([pred_time] + init[:-3] + [cost_y[-1]])
 
     init_ts = compute_step(init, ts, inter_axle)
     x_txt.set_text('x: ' + str(init_ts[0]))
@@ -163,6 +134,8 @@ def update(i):
 
     c_tmp = compute_cost_step(init, cost_func, cx, cy, ts)
     true_cost += c_tmp
+    true_time += ts
+    true_writer.writerow([true_time] + init_ts + [c_tmp])
     cost_txt.set_text('True cost (in progress): ' + str(true_cost))
 
     if abs(init_ts[0]-xt) < e and abs(init_ts[1]-yt) < e:
@@ -256,6 +229,12 @@ cost_txt = ax5.text(.05, .2, 'True cost: ' + str(true_cost), fontsize=fs)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-# anim.save('test_mpcc.gif', writer=writergif)
-
+# anim.save(cfg.anim_save_file, writer=writergif)
 plt.show()
+
+df1, df2 = prep_df(cfg.pred_csv, cfg.true_csv)
+interp = interpolate(df1, df2)
+cc = compare_costs(df1, interp)
+print(cc)
+# print(ec[0], '\n')
+# print(ec[1])

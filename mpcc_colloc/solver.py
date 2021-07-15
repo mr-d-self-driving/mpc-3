@@ -159,7 +159,7 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     # plot sparsity
     sg = cd.sum1(g)
     sparsity = cd.jacobian(cd.jacobian(sg, w), w).sparsity()
-    plt.imsave('sparsity_colloc.png', np.array(sparsity))
+    plt.imsave('out/sparsity_colloc.png', np.array(sparsity))
 
     # Create an NLP solver
     solver_opts = {}
