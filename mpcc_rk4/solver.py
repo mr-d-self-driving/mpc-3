@@ -127,8 +127,9 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     # Create an NLP solver
     solver_opts = {}
     solver_opts['print_time'] = 0
-    solver_opts['ipopt.print_level'] = 0
+    # solver_opts['ipopt.print_level'] = 0
     solver_opts['ipopt.max_cpu_time'] = .5
+    solver_opts['ipopt.linear_solver'] = 'ma57'
 
     warm_start_opts = {}
     warm_start_opts['ipopt.warm_start_init_point'] = 'yes'
@@ -144,7 +145,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
 
     # solver.generate_dependencies('nlp.c')                                        
     # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
-    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'compiled_rk4_03_5/nlp.so'), merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])

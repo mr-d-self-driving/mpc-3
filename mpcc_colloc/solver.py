@@ -166,6 +166,7 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     solver_opts['print_time'] = 0
     solver_opts['ipopt.print_level'] = 0
     solver_opts['ipopt.max_cpu_time'] = .5
+    solver_opts['ipopt.linear_solver'] = 'ma57'
 
     warm_start_opts = {}
     warm_start_opts['ipopt.warm_start_init_point'] = 'yes'

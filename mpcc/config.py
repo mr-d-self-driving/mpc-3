@@ -1,8 +1,9 @@
 import casadi as cd
+import os
 
-anim_save_file = 'out/mpcc_rk4.gif'
-pred_csv = 'out/pred.csv'
-true_csv = 'out/true.csv'
+anim_save_file = os.path.join(os.getcwd(), 'out/mpcc_rk4.gif')
+pred_csv = os.path.join(os.getcwd(), 'out/pred.csv')
+true_csv = os.path.join(os.getcwd(), 'out/true.csv')
 
 T = 10. # Time horizon
 N = 40  # number of control intervals
