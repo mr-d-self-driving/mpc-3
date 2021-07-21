@@ -3,8 +3,8 @@
 Got the following error after following the "Obtaining HSL" instructions instructions with CasADI installed via pip on Fedora 30.
 ```
 Exception of type: OPTION_INVALID in file "../../../../Ipopt/src/Algorithm/IpAlgBuilder.cpp" at line 321:
- Exception message: Selected linear solver MA27 not available.
-Tried to obtain MA27 from shared library "libhsl.so", but the following error occured:
+ Exception message: Selected linear solver MA57 not available.
+Tried to obtain MA57 from shared library "libhsl.so", but the following error occured:
 /lib/libhsl.so: undefined symbol: metis_nodend_
 ```
 I ended up compiling the HSL code using [ThirdParty-HSL](https://github.com/coin-or-tools/ThirdParty-HSL), which is one of the options that Ipopt gives in its [documentation](https://coin-or.github.io/Ipopt/INSTALL.html), and then updating `$LD_LIBRARY_PATH` so it can be found at runtime.
