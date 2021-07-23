@@ -1,111 +1,51 @@
-from mpc_solver import build_solver
+from mpc.utils import compute_step
 
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-
-import matplotlib.animation as animation
+import time
 import casadi as cd
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+import mpc.config as cfg
 
-fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
+build_solver = cfg.solver
+T = cfg.T
+N = cfg.N
+inter_axle = cfg.inter_axle
 
-T = 10. # Time horizon
-N = 40 # number of control intervals
-
-init_ts = [0, 1, 0, 0, 0]
-target_x, target_y = -1.0, -0.75
-
-dt = .033
-e = 0.07
+ts = cfg.ts
+e = cfg.e
 
 keep_going = True
 num_targets = 0
 
-solver, params = build_solver(init_ts)
+xt, yt = cfg.xt[num_targets], cfg.yt[num_targets]
+init_ts = cfg.init_ts
 
-def solve_mpc(w0_tmp=None):
-    global w_opt
-    w0, lbw, ubw, lbg, ubg = params
+fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-    if w0_tmp == None:
-        w0 = w_opt
-    else: w0 = w0_tmp + w0
-    lbw = init_ts + lbw
-    ubw = init_ts + ubw
+solver, params, trajectories = build_solver(init_ts, T, N, inter_axle)
+_, lbw_suffix, ubw_suffix, lbg, ubg = params
 
-    sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(target_x, target_y))
-    w_opt = sol['x'].full().flatten()
+def solve_mpcc():
+    global sol
 
-    return w_opt
+    lbw = init_ts + lbw_suffix
+    ubw = init_ts + ubw_suffix
 
-def solved_vals(w0_tmp=None):
-    global solver, params, w_opt
+    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt))
 
-    def sep_vals(lst):
-        x_opt = lst[0::7]
-        y_opt = lst[1::7]
-        theta_opt = lst[2::7]
-        v_opt = lst[3::7]
-        omega_opt = lst[4::7]
-        a_opt = lst[5::7]
-        alpha_opt = lst[6::7]
+    # cost = sol['f'].full().flatten()
 
-        return [x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt]
+    state_opt, u_opt = trajectories(sol['x'])
+    state_opt = state_opt.full() # to numpy array
+    u_opt = u_opt.full() # to numpy array
 
-    w_opt = solve_mpc(w0_tmp)
-    opts = sep_vals(w_opt)
-
-    return opts
-
-def compute_step(init): # init = [x, y, theta, v, omega, a, alpha]
-    x, y, theta, v, omega, a, alpha = init
-    v_ts = v + a*dt
-    omega_ts = omega + alpha*dt
-
-    ds = v*dt + (1/2)*a*(dt**2)
-    dtheta = omega*dt + (1/2)*alpha*(dt**2)
-
-    theta_ts = theta + dtheta
-    dx, dy = ds*cd.cos(theta_ts), ds*cd.sin(theta_ts)
-
-    x_ts, y_ts = x + dx, y + dy
-
-    return [x_ts, y_ts, theta_ts, v_ts, omega_ts]
-
-# tgrid doesn't need to be recomputed
-tgrid = [T/N*k for k in range(N+1)]
-
-x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(init_ts)
-
-x_diff = [target_x - x for x in x_opt]
-y_diff = [target_y - y for y in y_opt]
-
-ax1.set_ylim([-2.0, 2.0])
-ax1.grid()
-
-x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
-y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
-a_line, = ax1.step(tgrid, [None] + list(a_opt), '-.', color='green')
-alpha_line, = ax1.step(tgrid, [None] + list(alpha_opt), '-.', color='blue')
-ax1.legend(['xt - x','yt - y','a', 'alpha'])
-
-ax2.set_ylim([-2, 2])
-ax2.set_xlim([-2, 2])
-ax2.grid()
-
-uni_traj, = ax2.plot(x_opt, y_opt, '-', color='green', alpha=0.3)
-
-uni_pt, = ax2.plot([x_opt[0]], [y_opt[0]], marker='o', color='blue')
-target_pt, = ax2.plot([target_x], [target_y], marker='x', color='blue')
-
-# Plot dt time step
-ts = compute_step([x_opt[0], y_opt[0], theta_opt[0], v_opt[0], omega_opt[0], a_opt[0], alpha_opt[0]])
-step_traj, = ax2.plot([x_opt[0], ts[0]], [y_opt[0], ts[1]], '-', color='black')
+    return state_opt, u_opt
 
 def gen():
     global keep_going, num_targets
     i = 0
-    while num_targets < 3:
+    while num_targets < cfg.num_targets_final:
         i += 1
         if not keep_going:
             num_targets += 1
@@ -114,39 +54,76 @@ def gen():
         yield i
 
 def update(i):
-    global x_line, y_line, a_line, alpha_line
-    global uni_pt, target_pt, step_traj, uni_traj
-    global init_ts, target_x, target_y, num_targets, keep_going
+    global init_ts, keep_going, xt, yt
 
-    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals()
+    state_opt, u_opt = solve_mpcc()
 
-    x_diff = [target_x - x for x in x_opt]
-    y_diff = [target_y - y for y in y_opt]
+    x_diff = [xt - x for x in state_opt[0]]
+    y_diff = [yt - y for y in state_opt[1]]
 
     x_line.set_ydata(x_diff)
     y_line.set_ydata(y_diff)
 
-    a_line.set_ydata([None] + list(a_opt))
-    alpha_line.set_ydata([None] + list(alpha_opt))
+    aux_line.set_ydata(np.append(np.nan, u_opt[1]))
+    alphaux_line.set_ydata(np.append(np.nan, u_opt[0]))
 
-    uni_traj.set_data(x_opt, y_opt)
-    uni_pt.set_data([x_opt[0]], [y_opt[0]])
+    traj.set_data(state_opt[0], state_opt[1])
+    curr_pt.set_data([state_opt[0][0]], [state_opt[1][0]])
 
-    init = [x_opt[0], y_opt[0], theta_opt[0], v_opt[0], omega_opt[0], a_opt[0], alpha_opt[0]]
+    init = [state_opt[0][0], state_opt[1][0], state_opt[2][0], state_opt[3][0], state_opt[4][0], u_opt[0][0], u_opt[1][0]]
 
-    ts = compute_step(init)
-    step_traj.set_data([x_opt[0], ts[0]], [y_opt[0], ts[1]])
-    init_ts = ts
+    init_ts = compute_step(init, ts, inter_axle)
 
-    if abs(init_ts[0]-target_x) < e and abs(init_ts[1]-target_y) < e:
-        target_x, target_y = float(random.randint(-200, 200))/100, float(random.randint(-200, 200))/100
+    if abs(init_ts[0]-xt) < e and abs(init_ts[1]-yt) < e:
         keep_going = False
-        target_pt.set_data([target_x], [target_y])
+        xt, yt = cfg.xt[num_targets], cfg.xt[num_targets]
     
-    return [x_line, y_line, a_line, alpha_line, uni_traj, uni_pt, step_traj]
+    return [x_line, y_line, aux_line, alphaux_line, traj, curr_pt]
+
+tgrid = [T/N*k for k in range(N+1)]
+
+w0, lbw, ubw, lbg, ubg = params
+w0 = init_ts + w0
+lbw = init_ts + lbw
+ubw = init_ts + ubw
+
+sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt))
+
+# cost = sol['f'].full().flatten()
+
+w_opt = sol['x'].full().flatten()
+state_opt, u_opt = trajectories(sol['x'])
+state_opt = state_opt.full() # to numpy array
+u_opt = u_opt.full() # to numpy array
+
+x_diff = [xt - x for x in state_opt[0]]
+y_diff = [yt - y for y in state_opt[1]]
+
+ax1.set_xlim([0, int(T)])
+ax1.set_ylim([-5, 5])
+x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
+y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
+aux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='green')
+alphaux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='blue')
+
+ax1.set_title('Controls')
+ax1.legend(['xt - x','yt - y', r'$a$', r'$\alpha$'])
+ax1.set_xlabel('Time horizon')
+ax1.grid()
+
+ax2.set_title('Trajectory')
+ax2.set_ylim([-5, 5])
+ax2.set_xlim([-5, 5])
+ax2.set_ylabel('y-axis')
+ax2.set_xlabel('x-axis')
+
+# plot curve
+traj, = ax2.plot(state_opt[0], state_opt[1], '-', color='green', alpha=0.4)
+curr_pt, = ax2.plot([state_opt[0][0]], [state_opt[1][0]], marker='o', color='black')    
+target_pt, = ax2.plot([xt], [yt], marker='x', color='black')
+ax2.grid()
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save('test_mpc.gif', writer=writergif)
-
-# plt.show()
+# anim.save(cfg.anim_save_file, writer=writergif)
+plt.show()

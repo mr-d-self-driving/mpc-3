@@ -1,7 +1,14 @@
 import casadi as cd
 import os
 
-anim_save_file = os.path.join(os.getcwd(), 'out/mpcc_rk4.gif')
+from solvers.mpcc_colloc import build_solver as mpcc_colloc
+from solvers.mpcc_rk4 import build_solver as mpcc_rk4
+
+solver = mpcc_colloc
+ipopt_solver = 'ma57'
+solve_method = 'colloc'
+
+anim_save_file = os.path.join(os.getcwd(), 'out', 'mpcc_' + solve_method +'.gif')
 pred_csv = os.path.join(os.getcwd(), 'out/pred.csv')
 true_csv = os.path.join(os.getcwd(), 'out/true.csv')
 

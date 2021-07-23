@@ -1,12 +1,11 @@
 from mpcc.loss import gen_cost_func
 from mpcc.utils import merge_dict
-from os import system
 
-import os
 import casadi as cd
-import random as rd
 import numpy as np
 import matplotlib.pyplot as plt
+
+import mpcc.config as cfg
 
 def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     # Degree of interpolating polynomial
@@ -159,14 +158,14 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     # plot sparsity
     sg = cd.sum1(g)
     sparsity = cd.jacobian(cd.jacobian(sg, w), w).sparsity()
-    plt.imsave('out/sparsity_colloc.png', np.array(sparsity))
+    plt.imsave('out/sparsity_mpcc_colloc.png', np.array(sparsity))
 
     # Create an NLP solver
     solver_opts = {}
     solver_opts['print_time'] = 0
     solver_opts['ipopt.print_level'] = 0
     solver_opts['ipopt.max_cpu_time'] = .5
-    solver_opts['ipopt.linear_solver'] = 'ma57'
+    solver_opts['ipopt.linear_solver'] = cfg.ipopt_solver
 
     warm_start_opts = {}
     warm_start_opts['ipopt.warm_start_init_point'] = 'yes'

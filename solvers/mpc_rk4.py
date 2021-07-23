@@ -1,14 +1,12 @@
-from mpcc.loss import gen_cost_func
-from mpcc.utils import merge_dict
-from os import system
+from mpc.utils import merge_dict
 
-import os
 import casadi as cd
-import random as rd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
+import mpc.config as cfg
+
+def build_solver(init_ts, T, N, D):
     
     xt = cd.SX.sym('xt') # target x
     yt = cd.SX.sym('yt') # target y
@@ -18,30 +16,24 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     phi = cd.SX.sym('phi')
     delta = cd.SX.sym('delta')
     vx = cd.SX.sym('vx')
-    theta = cd.SX.sym('theta')
 
-    z = cd.vertcat(x, y, phi, delta, vx, theta)
+    z = cd.vertcat(x, y, phi, delta, vx)
 
     alphaux = cd.SX.sym('alphaux')
     aux = cd.SX.sym('aux')
-    dt = cd.SX.sym('dt')
 
-    u = cd.vertcat(alphaux, aux, dt)
+    u = cd.vertcat(alphaux, aux)
 
-    zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/D)*cd.tan(delta), alphaux, aux, vx*dt)
+    zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/D)*cd.tan(delta), alphaux, aux)
 
-    xc = cd.SX.sym('xc', order + 1, 1)
-    yc = cd.SX.sym('yc', order + 1, 1)
-    contour_cost = gen_cost_func(order)
-
-    L = contour_cost(pos=cd.vertcat(x, y), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']
+    L = (x - xt)**2 + (y - yt)**2 + aux**2 + alphaux**2
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
     DT = T/N/M
     f = cd.Function('f', [z, u], [zdot, L])
-    X0 = cd.SX.sym('X0', 6)
-    U = cd.SX.sym('U', 3)
+    X0 = cd.SX.sym('X0', 5)
+    U = cd.SX.sym('U', 2)
     X = X0
     Q = 0
     for j in range(M):
@@ -69,7 +61,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     u_plot = []
 
     # "Lift" initial conditions
-    Xk = cd.SX.sym('X0', 6)
+    Xk = cd.SX.sym('X0', 5)
     w += [Xk]
     lbw += init_ts
     ubw += init_ts
@@ -79,12 +71,12 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     # Formulate the NLP
     for k in range(N):
         # New NLP variable for the control
-        Uk = cd.SX.sym('U_' + str(k), 3)
+        Uk = cd.SX.sym('U_' + str(k), 2)
         w   += [Uk]
-        #       alphaux  aux  dt
-        lbw += [-2*cd.pi, -1, 0]
-        ubw += [ 2*cd.pi,  1, 1]
-        w0  += [rd.randint(-628, 628)/1000., rd.randint(-100, 100)/1000., rd.randint(0, 100)/1000.]
+        #       alphaux  aux
+        lbw += [-2*cd.pi, -1]
+        ubw += [ 2*cd.pi,  1]
+        w0  += [0, 0]
         u_plot += [Uk]
 
         # Integrate till the end of the interval
@@ -92,26 +84,19 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
         Xk_end = Fk['xf']
         J=J+Fk['qf']
 
-        kf = float(k)
-        theta_tmp = kf/(N-1)
-        dtheta = 0.2
-
         # New NLP variable for state at end of interval
-        Xk = cd.SX.sym('X_' + str(k+1), 6)
+        Xk = cd.SX.sym('X_' + str(k+1), 5)
         w   += [Xk]
-        #          x         y       phi     delta   vx theta
-        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0, 0]
-        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2, 1]
-        x_tmp, y_tmp = xpoly(theta_tmp), ypoly(theta_tmp)
-        theta_step = theta_tmp + dtheta
-        phi_tmp = cd.arctan((ypoly(theta_step) - y_tmp)/(xpoly(theta_step) - x_tmp))
-        w0  += [xpoly(theta_tmp), ypoly(theta_tmp), phi_tmp, 0, rd.randint(0, 200)/1000., theta_tmp]
+        #          x         y       phi     delta   vx
+        lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0]
+        ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2]
+        w0  += [0, 0, 0, 0, 0]
         coord_plot += [Xk]
 
         # Add equality constraint
         g   += [Xk_end-Xk]
-        lbg += [0, 0, 0, 0, 0, 0]
-        ubg += [0, 0, 0, 0, 0, 0]
+        lbg += [0, 0, 0, 0, 0]
+        ubg += [0, 0, 0, 0, 0]
     
     # Concatenate vectors
     w = cd.vertcat(*w)
@@ -129,7 +114,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     solver_opts['print_time'] = 0
     solver_opts['ipopt.print_level'] = 0
     solver_opts['ipopt.max_cpu_time'] = .5
-    solver_opts['ipopt.linear_solver'] = 'ma57'
+    solver_opts['ipopt.linear_solver'] = cfg.ipopt_solver
 
     warm_start_opts = {}
     warm_start_opts['ipopt.warm_start_init_point'] = 'yes'
@@ -140,14 +125,14 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     warm_start_opts['ipopt.warm_start_slack_bound_push'] = 1e-9
     warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
 
-    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
+    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt)}
     solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts))
 
     # solver.generate_dependencies('nlp.c')                                        
     # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
-    solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])
 
-    return solver_comp, [w0[6:], lbw[6:], ubw[6:], lbg, ubg], trajectories
+    return solver, [w0[5:], lbw[5:], ubw[5:], lbg, ubg], trajectories

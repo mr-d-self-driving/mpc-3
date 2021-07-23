@@ -1,6 +1,4 @@
-from casadi.casadi import diff
-from mpcc_rk4.solver import build_solver
-from mpcc.utils import compare_costs, compute_cost_step, gen_t, compute_step, interpolate, prep_df
+from mpcc.utils import compute_cost_step, gen_t, compute_step
 from mpcc.loss import gen_cost_func
 
 import time
@@ -20,6 +18,7 @@ true = open(cfg.true_csv, 'w', newline='')
 true_writer = csv.writer(true)
 true_writer.writerow(['time', 'x', 'y', 'phi', 'delta', 'v', 'theta', 'cost'])
 
+build_solver = cfg.solver
 T = cfg.T
 N = cfg.N
 inter_axle = cfg.inter_axle

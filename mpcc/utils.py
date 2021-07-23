@@ -1,5 +1,4 @@
 import casadi as cd
-from casadi.casadi import PrintableCommon_swigregister
 import pandas as pd
 import numpy as np
 
