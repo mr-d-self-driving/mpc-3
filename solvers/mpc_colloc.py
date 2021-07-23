@@ -44,6 +44,7 @@ def build_solver(init_ts, T, N, inter_axle):
     xt = cd.SX.sym('xt') # target x
     yt = cd.SX.sym('yt') # target y
 
+    ## System Variables
     x = cd.SX.sym('x')
     y = cd.SX.sym('y')
     phi = cd.SX.sym('phi')
@@ -52,6 +53,7 @@ def build_solver(init_ts, T, N, inter_axle):
 
     z = cd.vertcat(x, y, phi, delta, vx)
 
+    ## Control variables
     alphaux = cd.SX.sym('alphaux')
     aux = cd.SX.sym('aux')
 
@@ -59,6 +61,7 @@ def build_solver(init_ts, T, N, inter_axle):
 
     zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/inter_axle)*cd.tan(delta), alphaux, aux)
 
+    ## Loss function
     L = (x - xt)**2 + (y - yt)**2 + aux**2 + alphaux**2
 
     # Continuous time dynamics
