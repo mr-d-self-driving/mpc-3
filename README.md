@@ -12,6 +12,7 @@ Two options are available for demos, either plotting a single trajectory compute
 
 ## Editing models
 By default, all solvers in `solvers/` use the car kinematic model. For example, `mpc_[method].py` uses the following system of equations and controls:
+
 ![car_system](/img/eqs/car_system.svg)
 ![car_controls](/img/eqs/car_controls.svg)
 Which looks like this in the code:
