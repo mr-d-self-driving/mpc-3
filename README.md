@@ -2,9 +2,9 @@
 
 Implemented models:
 - Car kinematic MPC w/ direct multiple shooting or direct collocation
-  - Use solvers `mpc_colloc.py` and `mpc_rk4.py`
+  - Use solvers `mpc_colloc.py` or `mpc_rk4.py`
 - Car kinematic MP contour control (MPCC) w/ direct multiple shooting or direct collocation
-  -  Use solvers `mpcc_colloc.py` and `mpcc_rk4.py`
+  -  Use solvers `mpcc_colloc.py` or `mpcc_rk4.py`
 - Unicycle kinematic (only mpc w/ direct multiple shooting available)
 
 ## Running demos
