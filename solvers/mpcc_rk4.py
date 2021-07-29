@@ -1,7 +1,7 @@
 from mpcc.loss import gen_cost_func
 from mpcc.utils import merge_dict
 
-import os
+from os import system
 import casadi as cd
 import random as rd
 import numpy as np
@@ -144,9 +144,11 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
     solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts))
 
-    # solver.generate_dependencies('nlp.c')                                        
-    # system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
-    # solver_comp = cd.nlpsol('solver', 'ipopt', os.path.join(os.getcwd(), 'nlp.so'), merge_dict(solver_opts, warm_start_opts))
+    if cfg.gen_compiled:
+        solver.generate_dependencies('nlp.c')                                        
+        system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
+    if cfg.use_compiled:
+        solver = cd.nlpsol('solver', 'ipopt', cfg.compiled_path, merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])

@@ -5,8 +5,12 @@ from solvers.mpc_colloc import build_solver as mpc_colloc
 from solvers.mpc_rk4 import build_solver as mpc_rk4
 
 solver = mpc_rk4
-ipopt_solver = 'ma57'
-solve_method = 'colloc'
+ipopt_solver = 'mumps'
+solve_method = 'rk4'
+
+gen_compiled = False
+use_compiled = False
+compiled_path = '' # not using compiled
 
 anim_save_file = os.path.join(os.getcwd(), 'out', 'mpc_' + solve_method +'.gif')
 
