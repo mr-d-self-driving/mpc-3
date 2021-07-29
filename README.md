@@ -3,7 +3,7 @@
 Implemented models:
 - Car kinematic MPC w/ direct multiple shooting or direct collocation
   - Use solvers `mpc_colloc.py` or `mpc_rk4.py`
-- Car kinematic MP contour control (MPCC) w/ direct multiple shooting or direct collocation
+- Car kinematic MP Contour Control (MPCC) w/ direct multiple shooting or direct collocation
   -  Use solvers `mpcc_colloc.py` or `mpcc_rk4.py`
 - Unicycle kinematic (only mpc w/ direct multiple shooting available)
 
@@ -39,3 +39,6 @@ u = cd.vertcat(alphaux, aux, dt)
 zdot = cd.vertcat(vx*cd.cos(phi), vx*cd.sin(phi), (vx/inter_axle)*cd.tan(delta), alphaux, aux, vx*dt)
 ```
 Therefore, using a different model requires declaring all the relevant system variables `s1 = cd.SX.sym('s1'); s2 = cd.SX.sym('s2'); ...`, control variables `c1 = cd.SX.sym('c1'); c2 = cd.SX.sym('c2'); ...` and them combining them into the system vector `z = cd.vertcat(s1, s1, ...)`, control vector `u = cd.vertcat(c1, c2, ...)`. Additionally, change the `zdot` vector according to the new system constraints. Make sure to also edit the bounds (`lbw` & `ubw`) in the NLP formulation.
+
+## Installing HSL solvers
+See `hsl.md` for instructions if CasADI is installed via pip.
