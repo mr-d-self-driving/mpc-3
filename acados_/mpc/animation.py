@@ -1,8 +1,6 @@
 from acados_.mpc.solver import build_ocp
-from acados_.mpc.utils import compute_step
 from acados_template import AcadosOcpSolver, AcadosSimSolver
 
-import casadi as cd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -51,7 +49,6 @@ def solve_mpc(is_start=False):
 
     # update state
     xcurrent = integrator.get("x")
-
     return simX, simU
 
 def gen():
