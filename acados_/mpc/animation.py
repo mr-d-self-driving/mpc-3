@@ -90,9 +90,9 @@ def update(i):
 
 tgrid = [T/N*k for k in range(N+1)]
 
-ocp, simX, simU = build_ocp(xcurrent, target, T, N, D)
-ocp_solver = AcadosOcpSolver(ocp, json_file = 'acados_ocp.json')
-integrator = AcadosSimSolver(ocp, json_file = 'acados_ocp.json')
+ocp, simX, simU = build_ocp(xcurrent, target, T, N, D, cfg.code_export_dir)
+ocp_solver = AcadosOcpSolver(ocp, json_file=cfg.json_path)
+integrator = AcadosSimSolver(ocp, json_file=cfg.json_path)
 
 # get solution
 simX, simU = solve_mpc(is_start=True)

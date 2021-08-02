@@ -3,7 +3,7 @@ from acados_.mpc.model import car_model
 import numpy as np
 import scipy.linalg
 
-def build_ocp(init_ts, target, Tf, N, D):
+def build_ocp(init_ts, target, Tf, N, D, export_dir):
     # create ocp object to formulate the OCP
     ocp = AcadosOcp()
 
@@ -69,5 +69,7 @@ def build_ocp(init_ts, target, Tf, N, D):
 
     # set prediction horizon
     ocp.solver_options.tf = Tf
+
+    ocp.code_export_directory = export_dir
 
     return ocp, simX, simU

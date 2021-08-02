@@ -1,7 +1,7 @@
 {
     "acados_include_path": "/home/audrey/acados/include",
     "acados_lib_path": "/home/audrey/acados/lib",
-    "code_export_directory": "c_generated_code",
+    "code_export_directory": "/home/audrey/Projects/mpc/acados_/acados_generated_code",
     "constraints": {
         "C": [],
         "C_e": [],
