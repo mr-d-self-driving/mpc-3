@@ -76,8 +76,8 @@ def build_solver(init_ts, T, N, D):
         Uk = cd.SX.sym('U_' + str(k), 2)
         w   += [Uk]
         #       alphaux  aux
-        lbw += [-2*cd.pi, -1]
-        ubw += [ 2*cd.pi,  1]
+        lbw += [-cd.pi, -1]
+        ubw += [ cd.pi,  1]
         w0  += [0, 0]
         u_plot += [Uk]
 

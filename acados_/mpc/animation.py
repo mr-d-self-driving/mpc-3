@@ -6,13 +6,15 @@ import matplotlib.animation as animation
 import numpy as np
 import acados_.mpc.config as cfg
 
+plt.style.use('ggplot')
+
 T = cfg.T
 N = cfg.N
 D = cfg.D
 
 xcurrent = cfg.init_ts
-xt, yt = cfg.xt[0], cfg.yt[0]
-target = [xt, yt] + [0]*5
+xf, yf = cfg.xf[0], cfg.yf[0]
+target = [xf, yf] + [0]*5
 
 ts = cfg.ts
 e = cfg.e
@@ -61,17 +63,17 @@ def gen():
             keep_going = True
         else:
             i += 1
-            yield i
+        yield i
 
 def update(i):
-    global init_ts, keep_going, xt, yt
+    global init_ts, keep_going, xf, yf
 
     simX, simU = solve_mpc()
 
     simX_t = simX.T
     a_dat, alpha_dat = simU.T
-    x_diff = xt - simX_t[0]
-    y_diff = yt - simX_t[1]
+    x_diff = xf - simX_t[0]
+    y_diff = yf - simX_t[1]
 
     x_line.set_ydata(x_diff)
     y_line.set_ydata(y_diff)
@@ -82,9 +84,9 @@ def update(i):
     traj.set_data(simX_t[0], simX_t[1])
     curr_pt.set_data([simX[0][0]], [simX[0][1]])
 
-    if abs(simX[0][0]-xt) < e and abs(simX[0][1]-yt) < e:
+    if abs(simX[0][0]-xf) < e and abs(simX[0][1]-yf) < e:
         keep_going = False
-        xt, yt = cfg.xt[num_targets], cfg.xt[num_targets]
+        xf, yf = cfg.xf[num_targets], cfg.xf[num_targets]
     
     return [x_line, y_line, aux_line, alphaux_line, traj, curr_pt]
 
@@ -99,32 +101,32 @@ simX, simU = solve_mpc(is_start=True)
 
 simX_t = simX.T
 a_dat, alpha_dat = simU.T
-x_diff = xt - simX_t[0]
-y_diff = yt - simX_t[1]
+x_diff = xf - simX_t[0]
+y_diff = yf - simX_t[1]
 
 ax1.set_xlim([0, int(T)])
-ax1.set_ylim([-5, 5])
+ax1.set_ylim([-20, 20])
 x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
 y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
 aux_line, = ax1.step(tgrid, np.append(np.nan, a_dat), '-.', color='green')
 alphaux_line, = ax1.step(tgrid, np.append(np.nan, alpha_dat), '-.', color='blue')
 
 ax1.set_title('Controls')
-ax1.legend(['xt - x','yt - y', r'$a$', r'$\alpha$'])
+ax1.legend([r'$x_f - x$',r'$y_f - y$', r'$a$', r'$\alpha$'])
 ax1.set_xlabel('Time horizon')
-ax1.grid()
+ax1.grid(True)
 
 ax2.set_title('Trajectory')
-ax2.set_ylim([-5, 5])
-ax2.set_xlim([-5, 5])
+ax2.set_ylim([-20, 20])
+ax2.set_xlim([-20, 20])
 ax2.set_ylabel('y-axis')
 ax2.set_xlabel('x-axis')
 
 # plot curve
 traj, = ax2.plot(simX_t[0], simX_t[1], '-', color='green', alpha=0.4)
 curr_pt, = ax2.plot([xcurrent[0]], [xcurrent[1]], marker='o', color='black')
-target_pt, = ax2.plot([xt], [yt], marker='x', color='black')
-ax2.grid()
+target_pt, = ax2.plot([xf], [yf], marker='x', color='black')
+ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=10)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)

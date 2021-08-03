@@ -87,7 +87,7 @@ x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
 y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
 a_line, = ax1.step(tgrid, [None] + list(a_opt), '-.', color='green')
 alpha_line, = ax1.step(tgrid, [None] + list(alpha_opt), '-.', color='blue')
-ax1.legend(['xt - x','yt - y','a', 'alpha'])
+ax1.legend(['xf - x','yf - y','a', 'alpha'])
 
 ax2.set_ylim([-2, 2])
 ax2.set_xlim([-2, 2])

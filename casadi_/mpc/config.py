@@ -1,10 +1,6 @@
 import os
 import casadi as cd
 
-from casadi_.solvers.mpc_colloc import build_solver as mpc_colloc
-from casadi_.solvers.mpc_rk4 import build_solver as mpc_rk4
-
-solver = mpc_rk4
 ipopt_solver = 'mumps'
 solve_method = 'rk4'
 
@@ -23,9 +19,9 @@ N = 40  # number of control intervals
 inter_axle = 0.5   # inter-axle distance
 
 ts = .04 # time-step
-e = 0.1 # epsilon (value for when solving stops)
+e = 0.07 # epsilon (value for when solving stops)
 
-init_ts = [0, 0, cd.pi/4, 0, 0]
-xt, yt = [2], [3]
+init_ts = [2, 1, cd.pi/2, 0, 0]
+xf, yf = [0, -3, -2, 1, 2], [3, 0, -3, -1, 1]
 
-num_targets_final = 1
+num_targets_final = len(xf)

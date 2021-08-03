@@ -5,7 +5,7 @@ import casadi as cd
 T = 10. # Time horizon
 N = 40 # number of control intervals
 
-def nlp(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
+def nlp(x_init, y_init, theta_init, v_init, omega_init, xf, yf):
 
     xs = cd.MX.sym('xs')
     ys = cd.MX.sym('ys')
@@ -21,7 +21,7 @@ def nlp(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
 
     xdot = cd.vertcat(v*cd.cos(theta), v*cd.sin(theta), w, a, alpha)
 
-    L = (xs-xt)**2 + (ys-yt)**2 + a**2 + alpha**2
+    L = (xs-xf)**2 + (ys-yf)**2 + a**2 + alpha**2
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
@@ -100,7 +100,7 @@ import matplotlib.animation as animation
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-def solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
+def solved_vals(x_init, y_init, theta_init, v_init, omega_init, xf, yf):
 
     def sep_vals(lst):
         x_opt = lst[0::7]
@@ -113,17 +113,17 @@ def solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt):
 
         return x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt
     
-    w_opt = nlp(x_init, y_init, theta_init, v_init, omega_init, xt, yt)
+    w_opt = nlp(x_init, y_init, theta_init, v_init, omega_init, xf, yf)
     x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = sep_vals(w_opt)
 
     return x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt
     
-def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
+def plot(x_init, y_init, theta_init, v_init, omega_init, xf, yf, dt=0.0):
 
-    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(x_init, y_init, theta_init, v_init, omega_init, xt, yt)
+    x_opt, y_opt, theta_opt, v_opt, omega_opt, a_opt, alpha_opt = solved_vals(x_init, y_init, theta_init, v_init, omega_init, xf, yf)
 
-    x_diff = [xt - x for x in x_opt]
-    y_diff = [yt - y for y in y_opt]
+    x_diff = [xf - x for x in x_opt]
+    y_diff = [yf - y for y in y_opt]
     tgrid = [T/N*k for k in range(N+1)]
 
     ax1.set_ylim([-2.0, 2.0])
@@ -133,17 +133,17 @@ def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
     ax1.step(tgrid, cd.vertcat(cd.DM.nan(1), a_opt), '-.', color='green')
     ax1.step(tgrid, cd.vertcat(cd.DM.nan(1), alpha_opt), '-.', color='blue')
 
-    ax1.legend(['xt - x','yt - y','a', 'alpha'])
-    ax1.grid()
+    ax1.legend(['xf - x','yf - y','a', 'alpha'])
+    ax1.grid(True)
 
     ax2.set_ylim([-2, 2])
     ax2.set_xlim([-2, 2])
 
     ax2.plot(x_opt, y_opt, '-', color='green', alpha=0.3)
-    ax2.grid()  
+    ax2.grid(True)  
 
     ax2.plot([x_opt[0]], [y_opt[0]], marker='o', color='blue')
-    ax2.plot([xt], [yt], marker='x', color='blue')
+    ax2.plot([xf], [yf], marker='x', color='blue')
 
     # Plot dt time step
     v_ts = v_opt[0] + a_opt[0]*dt
@@ -169,12 +169,12 @@ def plot(x_init, y_init, theta_init, v_init, omega_init, xt, yt, dt=0.0):
 
 #         ax1.cla()
 #         ax2.cla()
-#         xt, yt = event.xdata, event.ydata
-#         print('x = %f, y = %f'%(xt, yt))
+#         xf, yf = event.xdata, event.ydata
+#         print('x = %f, y = %f'%(xf, yf))
 
-#         plot(0, 1, xt, yt)
+#         plot(0, 1, xf, yf)
 
-#         ax2.plot([xt], [yt], marker='x')
+#         ax2.plot([xf], [yf], marker='x')
 #         plt.draw()
 
 # Initial point

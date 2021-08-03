@@ -10,6 +10,8 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import casadi_.mpcc.config as cfg
 
+plt.style.use('ggplot')
+
 pred = open(cfg.pred_csv, 'w', newline='')
 pred_writer = csv.writer(pred)
 pred_writer.writerow(['time', 'x', 'y', 'phi', 'delta', 'v', 'theta', 'cost'])
@@ -42,7 +44,7 @@ curve = cfg.curve_dict
 xpts, ypts = curve['xpts'], curve['ypts']
 order = curve['order']
 xs, ys = xpts[0], ypts[0]
-xt, yt = xpts[-1], ypts[-1]
+xf, yf = xpts[-1], ypts[-1]
 init_ts = curve['init_ts']
 
 tpts = gen_t(xpts, ypts)
@@ -74,7 +76,7 @@ def solve_mpcc():
 
     time_before_sol = time.time()
 
-    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
+    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
 
     time_after_sol = time.time()
     diff_sol = time_after_sol - time_before_sol
@@ -95,20 +97,21 @@ def gen():
     global keep_going, num_targets
     i = 0
     while num_targets < cfg.num_targets_final:
-        i += 1
         if not keep_going:
             num_targets += 1
             print(num_targets)
             keep_going = True
-        yield i
+        else:
+            i += 1
+            yield i
 
 def update(i):
     global init_ts, keep_going, true_cost, true_time
 
     state_opt, u_opt = solve_mpcc()
 
-    x_diff = [xt - x for x in state_opt[0]]
-    y_diff = [yt - y for y in state_opt[1]]
+    x_diff = [xf - x for x in state_opt[0]]
+    y_diff = [yf - y for y in state_opt[1]]
 
     x_line.set_ydata(x_diff)
     y_line.set_ydata(y_diff)
@@ -137,7 +140,7 @@ def update(i):
     true_writer.writerow([true_time] + init_ts + [c_tmp])
     cost_txt.set_text('True cost (in progress): ' + str(true_cost))
 
-    if abs(init_ts[0]-xt) < e and abs(init_ts[1]-yt) < e:
+    if abs(init_ts[0]-xf) < e and abs(init_ts[1]-yf) < e:
         cost_txt.set_text('True cost: ' + str(true_cost))
         keep_going = False
     
@@ -152,7 +155,7 @@ ubw = init_ts + ubw
 
 time_before_sol = time.time()
 
-sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt, cx, cy))
+sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
 
 time_after_sol = time.time()
 diff_sol = time_after_sol - time_before_sol
@@ -167,8 +170,8 @@ state_opt, u_opt = trajectories(sol['x'])
 state_opt = state_opt.full() # to numpy array
 u_opt = u_opt.full() # to numpy array
 
-x_diff = [xt - x for x in state_opt[0]]
-y_diff = [yt - y for y in state_opt[1]]
+x_diff = [xf - x for x in state_opt[0]]
+y_diff = [yf - y for y in state_opt[1]]
 
 ax1.set_xlim([0, int(T)])
 ax1.set_ylim([-5, 5])
@@ -178,9 +181,9 @@ aux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='green')
 alphaux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='blue')
 
 ax1.set_title('Controls')
-ax1.legend(['xt - x','yt - y', r'$a$', r'$\alpha$'])
+ax1.legend(['xf - x','yf - y', r'$a$', r'$\alpha$'])
 ax1.set_xlabel('Time horizon')
-ax1.grid()
+ax1.grid(True)
 
 ax2.set_title('Trajectory')
 ax2.set_ylim([-5, 5])
@@ -197,8 +200,8 @@ ax2.plot(xplt, yplt, '-.', color='grey')
 
 traj, = ax2.plot(state_opt[0], state_opt[1], '-', color='green', alpha=0.4)
 curr_pt, = ax2.plot([state_opt[0][0]], [state_opt[1][0]], marker='o', color='black')    
-target_pt, = ax2.plot([xt], [yt], marker='x', color='black')
-ax2.grid()
+target_pt, = ax2.plot([xf], [yf], marker='x', color='black')
+ax2.grid(True)
 
 ax3.set_title('Timing')
 ax3.set_xlabel('Euler step #')

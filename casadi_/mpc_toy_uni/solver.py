@@ -4,8 +4,8 @@ T = 10. # Time horizon
 N = 40 # number of control intervals
 
 def build_solver(init_ts):
-    xt = cd.MX.sym('xt')
-    yt = cd.MX.sym('yt')
+    xf = cd.MX.sym('xf')
+    yf = cd.MX.sym('yf')
 
     xs = cd.MX.sym('xs')
     ys = cd.MX.sym('ys')
@@ -21,7 +21,7 @@ def build_solver(init_ts):
 
     xdot = cd.vertcat(v*cd.cos(theta), v*cd.sin(theta), w, a, alpha)
 
-    L = (xs-xt)**2 + (ys-yt)**2 + a**2 + alpha**2
+    L = (xs-xf)**2 + (ys-yf)**2 + a**2 + alpha**2
 
     # Fixed step Runge-Kutta 4 integrator
     M = 4 # RK4 steps per interval
@@ -85,7 +85,7 @@ def build_solver(init_ts):
         ubg += [0, 0, 0, 0, 0]
 
     # Create an NLP solver
-    prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xt, yt)}
+    prob = {'f': J, 'x': cd.vertcat(*w), 'g': cd.vertcat(*g), 'p': cd.vertcat(xf, yf)}
     solver = cd.nlpsol('solver', 'ipopt', prob, {'print_time':0, 'ipopt.print_level' : 0, 'ipopt.max_cpu_time': 0.4});
 
     return solver, [w0[5:], lbw[5:], ubw[5:], lbg, ubg]

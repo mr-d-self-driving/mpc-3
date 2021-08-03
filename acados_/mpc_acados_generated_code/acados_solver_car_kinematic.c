@@ -313,8 +313,8 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
     double* yref_0 = calloc(NY0, sizeof(double));
     // change only the non-zero elements:
-    yref_0[0] = 2;
-    yref_0[1] = 3;
+    yref_0[0] = 15;
+    yref_0[1] = 15;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "yref", yref_0);
     free(yref_0);
 
@@ -330,8 +330,8 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
     double* yref = calloc(NY, sizeof(double));
     // change only the non-zero elements:
-    yref[0] = 2;
-    yref[1] = 3;
+    yref[0] = 15;
+    yref[1] = 15;
 
     for (int i = 1; i < N; i++)
     {
@@ -402,8 +402,8 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     double* yref_e = calloc(NYN, sizeof(double));
     // change only the non-zero elements:
     
-    yref_e[0] = 2;
-    yref_e[1] = 3;
+    yref_e[0] = 15;
+    yref_e[1] = 15;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", yref_e);
     free(yref_e);
 

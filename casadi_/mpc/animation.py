@@ -7,7 +7,12 @@ import matplotlib.animation as animation
 import numpy as np
 import casadi_.mpc.config as cfg
 
-build_solver = cfg.solver
+from casadi_.solvers.mpc_rk4 import build_solver as solver_rk4
+from casadi_.solvers.mpc_colloc import build_solver as solver_colloc
+
+plt.style.use('ggplot')
+
+build_solver = solver_rk4 if cfg.solve_method == 'rk4' else solver_colloc
 T = cfg.T
 N = cfg.N
 inter_axle = cfg.inter_axle
@@ -15,24 +20,40 @@ inter_axle = cfg.inter_axle
 ts = cfg.ts
 e = cfg.e
 
+rebuild_solver = False
 keep_going = True
 num_targets = 0
 
-xt, yt = cfg.xt[num_targets], cfg.yt[num_targets]
+xf, yf = cfg.xf[num_targets], cfg.yf[num_targets]
 init_ts = cfg.init_ts
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
+# fig = plt.figure(figsize=(16, 8))
+
+# gs = fig.add_gridspec(2,2)
+# ax1 = fig.add_subplot(gs[0, 0])
+# ax3 = fig.add_subplot(gs[1, 0])
+# ax2 = fig.add_subplot(gs[:, 1])
 
 solver, params, trajectories = build_solver(init_ts, T, N, inter_axle)
-_, lbw_suffix, ubw_suffix, lbg, ubg = params
+w0_suffix, lbw_suffix, ubw_suffix, lbg, ubg = params
 
 def solve_mpc():
-    global sol
+    global sol, rebuild_solver
 
     lbw = init_ts + lbw_suffix
     ubw = init_ts + ubw_suffix
 
-    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt))
+    if rebuild_solver:
+        global solver, params, trajectories, sol
+        solver, params, trajectories = build_solver(init_ts, T, N, inter_axle)
+        print('Rebuilt solver')
+        rebuild_solver = False
+
+        w0 = init_ts + w0_suffix
+        sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
+    else:
+        sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
 
     # cost = sol['f'].full().flatten()
 
@@ -43,23 +64,25 @@ def solve_mpc():
     return state_opt, u_opt
 
 def gen():
-    global keep_going, num_targets
+    global keep_going, num_targets, xf, yf
     i = 0
     while num_targets < cfg.num_targets_final:
-        i += 1
         if not keep_going:
             num_targets += 1
-            print(num_targets)
+            if num_targets < cfg.num_targets_final: 
+                xf, yf = cfg.xf[num_targets], cfg.yf[num_targets]
+            print('number of targets reached:', num_targets)
             keep_going = True
+        else: i += 1
         yield i
 
 def update(i):
-    global init_ts, keep_going, xt, yt
+    global init_ts, keep_going, rebuild_solver
 
     state_opt, u_opt = solve_mpc()
 
-    x_diff = [xt - x for x in state_opt[0]]
-    y_diff = [yt - y for y in state_opt[1]]
+    x_diff = [xf - x for x in state_opt[0]]
+    y_diff = [yf - y for y in state_opt[1]]
 
     x_line.set_ydata(x_diff)
     y_line.set_ydata(y_diff)
@@ -69,25 +92,26 @@ def update(i):
 
     traj.set_data(state_opt[0], state_opt[1])
     curr_pt.set_data([state_opt[0][0]], [state_opt[1][0]])
+    target_pt.set_data([xf], [yf])
 
     init = [state_opt[0][0], state_opt[1][0], state_opt[2][0], state_opt[3][0], state_opt[4][0], u_opt[0][0], u_opt[1][0]]
 
     init_ts = compute_step(init, ts, inter_axle)
 
-    if abs(init_ts[0]-xt) < e and abs(init_ts[1]-yt) < e:
+    if abs(init_ts[0]-xf) < e and abs(init_ts[1]-yf) < e:
+        print('target reached:', xf, yf)
         keep_going = False
-        xt, yt = cfg.xt[num_targets], cfg.xt[num_targets]
+        rebuild_solver = True
     
     return [x_line, y_line, aux_line, alphaux_line, traj, curr_pt]
 
 tgrid = [T/N*k for k in range(N+1)]
 
-w0, lbw, ubw, lbg, ubg = params
-w0 = init_ts + w0
-lbw = init_ts + lbw
-ubw = init_ts + ubw
+w0 = init_ts + w0_suffix
+lbw = init_ts + lbw_suffix
+ubw = init_ts + ubw_suffix
 
-sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xt, yt))
+sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
 
 # cost = sol['f'].full().flatten()
 
@@ -96,22 +120,45 @@ state_opt, u_opt = trajectories(sol['x'])
 state_opt = state_opt.full() # to numpy array
 u_opt = u_opt.full() # to numpy array
 
-x_diff = [xt - x for x in state_opt[0]]
-y_diff = [yt - y for y in state_opt[1]]
+x_diff = [xf - x for x in state_opt[0]]
+y_diff = [yf - y for y in state_opt[1]]
 
 ax1.set_xlim([0, int(T)])
-ax1.set_ylim([-5, 5])
+ax1.set_ylim([-4, 4])
 x_line, = ax1.plot(tgrid, x_diff, '-', color='gray')
 y_line, = ax1.plot(tgrid, y_diff, '-', color='black')
 aux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[1]), '-.', color='green')
 alphaux_line, = ax1.step(tgrid, np.append(np.nan, u_opt[0]), '-.', color='blue')
 
-ax1.set_title('Controls')
-ax1.legend(['xt - x','yt - y', r'$a$', r'$\alpha$'])
-ax1.set_xlabel('Time horizon')
-ax1.grid()
+amin, amax = -1, 1
+alphamin, alphamax = -np.pi, np.pi
 
-ax2.set_title('Trajectory')
+amin_pts = [amin for _ in tgrid]
+amax_pts = [amax for _ in tgrid]
+alphamin_pts = [alphamin for _ in tgrid]
+alphamax_pts = [alphamax for _ in tgrid]
+
+ax1.plot(tgrid, amin_pts, '--', color='green', alpha=0.3)
+ax1.plot(tgrid, amax_pts, '--', color='green', alpha=0.3)
+ax1.plot(tgrid, alphamin_pts, '--', color='blue', alpha=0.3)
+ax1.plot(tgrid, alphamax_pts, '--', color='blue', alpha=0.3)
+
+# ax1.set_title('Controls')
+ax1.legend([r'$x_f - x$',r'$y_f - y$', r'$a$', r'$\alpha$'])
+ax1.set_xlabel('Time horizon')
+ax1.grid(True)
+
+# ax3.set_xlim([0, int(T)])
+# ax3.set_ylim([-5, 5])
+# x_line, = ax3.plot(tgrid, x_diff, '-', color='gray')
+# y_line, = ax3.plot(tgrid, y_diff, '-', color='black')
+
+# ax3.set_title('Distance from Target')
+# ax3.legend([r'$x_f - x$',r'$y_f - y$'])
+# ax3.set_xlabel('Time horizon')
+# ax3.grid(True)
+
+# ax2.set_title('Trajectory')
 ax2.set_ylim([-5, 5])
 ax2.set_xlim([-5, 5])
 ax2.set_ylabel('y-axis')
@@ -120,10 +167,10 @@ ax2.set_xlabel('x-axis')
 # plot curve
 traj, = ax2.plot(state_opt[0], state_opt[1], '-', color='green', alpha=0.4)
 curr_pt, = ax2.plot([state_opt[0][0]], [state_opt[1][0]], marker='o', color='black')    
-target_pt, = ax2.plot([xt], [yt], marker='x', color='black')
-ax2.grid()
+target_pt, = ax2.plot([xf], [yf], marker='x', color='black')
+ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-# anim.save(cfg.anim_save_file, writer=writergif)
-plt.show()
+anim.save(cfg.anim_save_file, writer=writergif)
+# plt.show()
