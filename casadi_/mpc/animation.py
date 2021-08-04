@@ -45,7 +45,7 @@ def solve_mpc():
     ubw = init_ts + ubw_suffix
 
     if rebuild_solver:
-        global solver, params, trajectories, sol
+        global solver, params, trajectories
         solver, params, trajectories = build_solver(init_ts, T, N, inter_axle)
         print('Rebuilt solver')
         rebuild_solver = False

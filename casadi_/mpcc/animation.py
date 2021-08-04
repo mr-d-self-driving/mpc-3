@@ -10,6 +10,9 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import casadi_.mpcc.config as cfg
 
+from casadi_.solvers.mpcc_rk4 import build_solver as solver_rk4
+from casadi_.solvers.mpcc_colloc import build_solver as solver_colloc
+
 plt.style.use('ggplot')
 
 pred = open(cfg.pred_csv, 'w', newline='')
@@ -20,7 +23,7 @@ true = open(cfg.true_csv, 'w', newline='')
 true_writer = csv.writer(true)
 true_writer.writerow(['time', 'x', 'y', 'phi', 'delta', 'v', 'theta', 'cost'])
 
-build_solver = cfg.solver
+build_solver = solver_rk4 if cfg.solve_method == 'rk4' else solver_colloc
 T = cfg.T
 N = cfg.N
 inter_axle = cfg.inter_axle

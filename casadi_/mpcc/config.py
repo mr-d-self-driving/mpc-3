@@ -1,10 +1,6 @@
 import casadi as cd
 import os
 
-from casadi_.solvers.mpcc_colloc import build_solver as mpcc_colloc
-from casadi_.solvers.mpcc_rk4 import build_solver as mpcc_rk4
-
-solver = mpcc_rk4
 ipopt_solver = 'mumps'
 solve_method = 'rk4'
 
@@ -19,6 +15,8 @@ gen_compiled = False
 use_compiled = False
 compiled_path = os.path.join(compiled_path, 'nlp.so')
 
+log_pred = False
+
 anim_save_file = os.path.join(out_path, 'casadi_mpcc_' + solve_method +'.gif')
 pred_csv = os.path.join(out_path, 'pred.csv')
 true_csv = os.path.join(out_path, 'true.csv')
@@ -30,54 +28,31 @@ inter_axle = 0.5   # inter-axle distance
 ts = .04 # time-step
 e = 0.1 # epsilon (value for when solving stops)
 
-num_targets_final = 1
+# 5th-order
+curve_1 = {'init_ts': [0, 0, cd.pi/3, 0, 0, 0],
+           'xpts': [0, .5, 2, 3.3],
+           'ypts': [0, 1, 3, 2],
+           'order': 5}
+          
+curve_2 = {'init_ts': [3.29, 2.09, -1.66, 0, 0, 0],
+           'xpts': [3.3, 2.7, 2, 3],
+           'ypts': [2, .5, -1, -2],
+           'order': 5}
 
-# # 5th-order
-# xs, ys = 0, 0
-# xf, yf = 3.3, 2
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/3, 0, 0, 0]
-# xpts = [xs] + [.5, 2] + [xf]
-# ypts = [ys] + [1, 3] + [yf]
-# order = 5
+curve_3 = {'init_ts': [3, -2, 0, 0, 0, 0],
+           'xpts': [3, 3.5, 4, 3.5, 1],
+           'ypts': [-2, -2.5, -3.5, -4.5, -4.5],
+           'order': 5}
 
-# # 5th-order
-# xs, ys = 0, 0
-# xf, yf = 3, 3
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
-# xpts = [xs] + [1, 2] + [xf]
-# ypts = [ys] + [2, 2.5] + [yf]
-# order = 5
+curve_4 = {'init_ts': [1, -4.5, 3*cd.pi/4, 0, 0, 0],
+           'xpts': [1, 0, -1.5, -3, -2.5],
+           'ypts': [-4.5, -3.5, -2.5, -1.5, .5],
+           'order': 5}
 
-# 3rd-order
-xs, ys = -0.26, 0
-xf, yf = 2, 3
-        # [x, y, phi, delta, vx, theta]
-init_ts = [xs, ys, cd.pi/2, 0, 0, 0]
-xpts = [xs] + [0, 1] + [xf]
-ypts = [ys] + [1, 2] + [yf]
-order = 3
+curve_5 = {'init_ts': [-2.5, .5, cd.pi/4, 0, 0, 0],
+           'xpts': [-2.5, -1.5, 0, 3, 2, 0],
+           'ypts': [.5, 1.25, 2, 0, -1, 0],
+           'order': 5}
 
-# # 3rd-order
-# xs, ys = -0.3, 0
-# xf, yf = 2, 3
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, 2*cd.pi/3, 0, 0, 0]
-# xpts = [xs] + [0, 1] + [xf]
-# ypts = [ys] + [1.5, 1.75] + [yf]
-# order = 3
-
-# # 1st-order
-# xs, ys = 0, 0
-# xf, yf = 2, 2 
-#         # [x, y, phi, delta, vx, theta]
-# init_ts = [xs, ys, cd.pi/4, 0, 0, 0]
-# xpts = [xs] + [1] + [xf]
-# ypts = [ys] + [1] + [yf]
-# order = 1
-
-curve_dict = {'init_ts': init_ts,
-              'xpts': xpts,
-              'ypts': ypts,
-              'order': order}
+curves_lst = [curve_1, curve_2, curve_3, curve_4, curve_5]
+num_targets_final = len(curves_lst)
