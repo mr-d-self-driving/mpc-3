@@ -67,13 +67,13 @@ static void mdlInitializeSizes (SimStruct *S)
     // ubx_0
     ssSetInputPortVectorDimension(S, 1, 6);
     // lbx
-    ssSetInputPortVectorDimension(S, 2, 78);
+    ssSetInputPortVectorDimension(S, 2, 117);
     // ubx
-    ssSetInputPortVectorDimension(S, 3, 78);
+    ssSetInputPortVectorDimension(S, 3, 117);
     // lbu
-    ssSetInputPortVectorDimension(S, 4, 80);
+    ssSetInputPortVectorDimension(S, 4, 120);
     // ubu
-    ssSetInputPortVectorDimension(S, 5, 80);/* specify dimension information for the OUTPUT ports */
+    ssSetInputPortVectorDimension(S, 5, 120);/* specify dimension information for the OUTPUT ports */
     ssSetOutputPortVectorDimension(S, 0, 3 );
     ssSetOutputPortVectorDimension(S, 1, 1 );
     ssSetOutputPortVectorDimension(S, 2, 1 );
@@ -166,32 +166,32 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     in_sign = ssGetInputPortRealSignalPtrs(S, 2);
     for (int ii = 1; ii < 40; ii++)
     {
-        for (int jj = 0; jj < 2; jj++)
-            buffer[jj] = (double)(*in_sign[(ii-1)*2+jj]);
+        for (int jj = 0; jj < 3; jj++)
+            buffer[jj] = (double)(*in_sign[(ii-1)*3+jj]);
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, ii, "lbx", (void *) buffer);
     }
     // ubx
     in_sign = ssGetInputPortRealSignalPtrs(S, 3);
     for (int ii = 1; ii < 40; ii++)
     {
-        for (int jj = 0; jj < 2; jj++)
-            buffer[jj] = (double)(*in_sign[(ii-1)*2+jj]);
+        for (int jj = 0; jj < 3; jj++)
+            buffer[jj] = (double)(*in_sign[(ii-1)*3+jj]);
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, ii, "ubx", (void *) buffer);
     }
     // lbu
     in_sign = ssGetInputPortRealSignalPtrs(S, 4);
     for (int ii = 0; ii < 40; ii++)
     {
-        for (int jj = 0; jj < 2; jj++)
-            buffer[jj] = (double)(*in_sign[ii*2+jj]);
+        for (int jj = 0; jj < 3; jj++)
+            buffer[jj] = (double)(*in_sign[ii*3+jj]);
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, ii, "lbu", (void *) buffer);
     }
     // ubu
     in_sign = ssGetInputPortRealSignalPtrs(S, 5);
     for (int ii = 0; ii < 40; ii++)
     {
-        for (int jj = 0; jj < 2; jj++)
-            buffer[jj] = (double)(*in_sign[ii*2+jj]);
+        for (int jj = 0; jj < 3; jj++)
+            buffer[jj] = (double)(*in_sign[ii*3+jj]);
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, ii, "ubu", (void *) buffer);
     }
 

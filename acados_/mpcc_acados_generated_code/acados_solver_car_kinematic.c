@@ -54,9 +54,9 @@
 #define NZ     0
 #define NU     3
 #define NP     0
-#define NBX    2
+#define NBX    3
 #define NBX0   6
-#define NBU    2
+#define NBU    3
 #define NSBX   0
 #define NSBU   0
 #define NSH    0
@@ -442,6 +442,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     
     idxbu[0] = 0;
     idxbu[1] = 1;
+    idxbu[2] = 2;
     double* lubu = calloc(2*NBU, sizeof(double));
     double* lbu = lubu;
     double* ubu = lubu + NBU;
@@ -450,6 +451,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     ubu[0] = 1;
     lbu[1] = -6.283185307179586;
     ubu[1] = 6.283185307179586;
+    ubu[2] = 1;
 
     for (int i = 0; i < N; i++)
     {
@@ -475,6 +477,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     
     idxbx[0] = 3;
     idxbx[1] = 4;
+    idxbx[2] = 5;
     double* lubx = calloc(2*NBX, sizeof(double));
     double* lbx = lubx;
     double* ubx = lubx + NBX;
@@ -482,6 +485,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     lbx[0] = -0.7853981633974483;
     ubx[0] = 0.7853981633974483;
     ubx[1] = 2;
+    ubx[2] = 1;
 
     for (int i = 1; i < N; i++)
     {

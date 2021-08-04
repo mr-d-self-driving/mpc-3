@@ -36,7 +36,7 @@ for i in range(N):
 simX[N,:] = ocp_solver.get(N, "x")
 
 simX_t = simX.T
-a_dat, alpha_dat = simU.T
+a_dat, alpha_dat, dt_dat = simU.T
 x_diff = xf - simX_t[0]
 y_diff = yf - simX_t[1]
 

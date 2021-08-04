@@ -25,15 +25,15 @@ def build_ocp(init_ts, cx, cy, order, Tf, N, D, export_dir):
 
     # set constraints
     deltamax = np.pi/4
-    ocp.constraints.lbx = np.array([-deltamax, 0])
-    ocp.constraints.ubx = np.array([+deltamax, 2])
-    ocp.constraints.idxbx = np.array([3, 4])
+    ocp.constraints.lbx = np.array([-deltamax, 0, 0])
+    ocp.constraints.ubx = np.array([+deltamax, 2, 1])
+    ocp.constraints.idxbx = np.array([3, 4, 5])
 
     amax = 1.0
     alphamax = 2*np.pi
-    ocp.constraints.lbu = np.array([-amax, -alphamax])
-    ocp.constraints.ubu = np.array([+amax, +alphamax])
-    ocp.constraints.idxbu = np.array([0, 1])
+    ocp.constraints.lbu = np.array([-amax, -alphamax, 0])
+    ocp.constraints.ubu = np.array([+amax, +alphamax, 1])
+    ocp.constraints.idxbu = np.array([0, 1, 2])
 
     ocp.constraints.x0 = init_ts
 
