@@ -11,10 +11,6 @@ import matplotlib.pyplot as plt
 import casadi_.mpcc.config as cfg
 
 def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
-    
-    xt = cd.SX.sym('xt') # target x
-    yt = cd.SX.sym('yt') # target y
-
     x = cd.SX.sym('x')
     y = cd.SX.sym('y')
     phi = cd.SX.sym('phi')
@@ -142,7 +138,7 @@ def build_solver(init_ts, T, N, D, order, xpoly, ypoly):
     warm_start_opts['ipopt.warm_start_slack_bound_push'] = 1e-9
     warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
 
-    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
+    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xc, yc)}
     solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts))
 
     if cfg.gen_compiled:

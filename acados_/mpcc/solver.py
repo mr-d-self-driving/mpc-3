@@ -3,46 +3,25 @@ from acados_.mpcc.model import car_model
 import numpy as np
 import scipy.linalg
 
-def build_ocp(init_ts, target, Tf, N, D, export_dir):
+def build_ocp(init_ts, cx, cy, order, Tf, N, D, export_dir):
     # create ocp object to formulate the OCP
     ocp = AcadosOcp()
 
     # set model
-    model = car_model(D)
+    model = car_model(D, order, cx, cy)
     ocp.model = model
 
     nx = model.x.size()[0]
     nu = model.u.size()[0]
-    ny = nx + nu
 
     simX = np.ndarray((N+1, nx))
     simU = np.ndarray((N, nu))
 
     # set dimensions
-    ocp.dims.N = N
+    ocp.dims.N  = N
 
     # set cost
-    Q = np.diag([1., 1., 0., 0., 0., 0.])
-    R = np.diag([1., 1., 1.])
-
-    ocp.cost.W_e = Q
-    ocp.cost.W = scipy.linalg.block_diag(Q, R)
-
-    ocp.cost.cost_type = 'NONLINEAR_LS'
-    ocp.cost.cost_type_e = 'NONLINEAR_LS'
-
-    ocp.cost.Vx = np.zeros((ny, nx))
-    ocp.cost.Vx[:nx,:nx] = np.eye(nx)
-
-    Vu = np.zeros((ny, nu))
-    Vu[5,0] = 1.0
-    Vu[6,1] = 1.0
-    ocp.cost.Vu = Vu
-
-    ocp.cost.Vx_e = np.eye(nx)
-
-    ocp.cost.yref   = np.array(target)
-    ocp.cost.yref_e = np.array(target[:-2])
+    ocp.cost.cost_type = 'EXTERNAL'
 
     # set constraints
     deltamax = np.pi/4
@@ -71,6 +50,4 @@ def build_ocp(init_ts, target, Tf, N, D, export_dir):
 
     ocp.code_export_directory = export_dir
 
-    return ocp, simX, simU    # create ocp object to formulate the OCP
-    ocp = AcadosOcp()    # create ocp object to formulate the OCP
-    ocp = AcadosOcp()
+    return ocp, simX, simU

@@ -9,7 +9,7 @@ ts = .04
 e = 0.1
 num_targets_final = 1
 
-xf, yf = [15.0], [15.0]
+xf, yf = [2.0], [3.0]
 init_ts = np.array([0.0, 0.0, np.pi/4, 0.0, 0.0])
 
 curr_path = os.path.dirname(os.path.dirname(__file__)) # sorta hacky

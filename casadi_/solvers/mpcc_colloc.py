@@ -45,9 +45,6 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
         pint = np.polyint(p)
         B[j] = pint(1.0)
 
-    xt = cd.SX.sym('xt') # target x
-    yt = cd.SX.sym('yt') # target y
-
     x = cd.SX.sym('x')
     y = cd.SX.sym('y')
     phi = cd.SX.sym('phi')
@@ -179,7 +176,7 @@ def build_solver(init_ts, T, N, inter_axle, order, xpoly, ypoly):
     warm_start_opts['ipopt.warm_start_mult_bound_push'] = 1e-9
 
     # Create an NLP solver
-    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xt, yt, xc, yc)}
+    prob = {'f': J, 'x': w, 'g': g, 'p': cd.vertcat(xc, yc)}
     solver = cd.nlpsol('solver', 'ipopt', prob, merge_dict(solver_opts, warm_start_opts));
 
     if cfg.gen_compiled:

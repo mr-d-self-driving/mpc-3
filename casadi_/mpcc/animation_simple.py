@@ -49,11 +49,11 @@ def solve_mpcc():
         lbw = init_ts + lbw_suffix
         ubw = init_ts + ubw_suffix
 
-        sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
+        sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(cx, cy))
     else:
         lbw = init_ts + lbw_suffix
         ubw = init_ts + ubw_suffix
-        sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
+        sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(cx, cy))
 
     # cost = sol['f'].full().flatten()
 
@@ -120,7 +120,7 @@ w0 = init_ts + w0_suffix
 lbw = init_ts + lbw_suffix
 ubw = init_ts + ubw_suffix
 
-sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
+sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(cx, cy))
 
 w_opt = sol['x'].full().flatten()
 state_opt, u_opt = trajectories(sol['x'])

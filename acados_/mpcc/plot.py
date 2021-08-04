@@ -1,9 +1,10 @@
-from acados_.mpc.solver import build_ocp
+from acados_.mpcc.solver import build_ocp
+from acados_.mpcc.utils import get_curve
 from acados_template import AcadosOcpSolver
 
 import matplotlib.pyplot as plt
 import numpy as np
-import acados_.mpc.config as cfg
+import acados_.mpcc.config as cfg
 
 plt.style.use('ggplot')
 
@@ -11,13 +12,14 @@ T = cfg.T
 N = cfg.N
 D = cfg.D
 
-init_ts = np.array(cfg.init_ts)
-xf, yf = cfg.xf[0], cfg.yf[0]
-target = [xf, yf] + [0]*5
-
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-ocp, simX, simU = build_ocp(init_ts, target, T, N, D, cfg.code_export_dir)
+curve = cfg.curves_lst[0]
+xs, ys, xf, yf, init_ts, xpts, ypts, tpts, xpoly, ypoly, cx, cy, order = get_curve(curve)
+
+print(cx, cy)
+
+ocp, simX, simU = build_ocp(init_ts, cx, cy, order, T, N, D, cfg.code_export_dir)
 ocp_solver = AcadosOcpSolver(ocp, json_file = 'acados_ocp.json')
 status = ocp_solver.solve()
 
@@ -55,6 +57,12 @@ ax2.set_ylabel('y-axis')
 ax2.set_xlabel('x-axis')
 
 # plot curve
+curve_pts = ax2.scatter(xpts, ypts, color='grey', s=15)
+tplt = np.linspace(0, 1)
+xplt = xpoly(tplt)
+yplt = ypoly(tplt)
+curve_ln, = ax2.plot(xplt, yplt, '-.', color='grey')
+
 traj, = ax2.plot(simX_t[0], simX_t[1], '-', color='green', alpha=0.4)
 curr_pt, = ax2.plot([simX_t[0][0]], [simX_t[1][0]], marker='o', color='black')    
 target_pt, = ax2.plot([xf], [yf], marker='x', color='black')

@@ -79,7 +79,7 @@ def solve_mpcc():
 
     time_before_sol = time.time()
 
-    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
+    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(cx, cy))
 
     time_after_sol = time.time()
     diff_sol = time_after_sol - time_before_sol
@@ -158,7 +158,7 @@ ubw = init_ts + ubw
 
 time_before_sol = time.time()
 
-sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf, cx, cy))
+sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(cx, cy))
 
 time_after_sol = time.time()
 diff_sol = time_after_sol - time_before_sol
