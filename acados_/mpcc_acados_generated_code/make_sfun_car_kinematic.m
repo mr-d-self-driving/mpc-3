@@ -85,6 +85,9 @@ i_in = i_in + 1;
 input_note = strcat(input_note, num2str(i_in), ') ubx_0 - upper bound on x for stage 0,',...
                     ' size [6]\n ');
 i_in = i_in + 1;
+input_note = strcat(input_note, num2str(i_in), ') parameters - concatenated for all shooting nodes 0 to N+1,',...
+                    ' size [492]\n ');
+i_in = i_in + 1;
 input_note = strcat(input_note, num2str(i_in), ') lbx for shooting nodes 1 to N-1, size [117]\n ');
 i_in = i_in + 1;
 input_note = strcat(input_note, num2str(i_in), ') ubx for shooting nodes 1 to N-1, size [117]\n ');

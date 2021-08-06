@@ -42,3 +42,9 @@ Therefore, using a different model requires declaring all the relevant system va
 
 ## Installing HSL solvers
 See `hsl.md` for instructions if CasADI is installed via pip.
+
+
+## Slides
+1. MPC mathematical formulation, rk4 (direct multiple shooting), direct collocation
+2. Overview of MPCC, kinematic car model
+3. Results (animations, timing plots, cost comparison)

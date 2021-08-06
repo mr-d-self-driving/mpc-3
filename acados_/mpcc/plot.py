@@ -19,7 +19,9 @@ xs, ys, xf, yf, init_ts, xpts, ypts, tpts, xpoly, ypoly, cx, cy, order = get_cur
 
 print(cx, cy)
 
-ocp, simX, simU = build_ocp(init_ts, cx, cy, order, T, N, D, cfg.code_export_dir)
+ocp, simX, simU = build_ocp(init_ts, order, T, N, D, cfg.code_export_dir)
+p = np.array(cx + cy)
+ocp.parameter_values = p
 ocp_solver = AcadosOcpSolver(ocp, json_file = 'acados_ocp.json')
 status = ocp_solver.solve()
 

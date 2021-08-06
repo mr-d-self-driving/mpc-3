@@ -22,8 +22,8 @@ def build_ocp(init_ts, target, Tf, N, D, export_dir):
     ocp.dims.N = N
 
     # set cost
-    Q = np.diag([1e0, 1e0, 1e-7, 1e-7, 1e-7])
-    R = np.diag([1e-1, 1e-1])
+    Q = np.diag([1e0, 1e0, 1e-4, 1e-4, 1e-4])
+    R = np.diag([1e0, 1e0])
 
     unscale = N / Tf
 
@@ -53,7 +53,7 @@ def build_ocp(init_ts, target, Tf, N, D, export_dir):
     ocp.constraints.idxbx = np.array([3, 4])
 
     amax = 1.0
-    alphamax = 2*np.pi
+    alphamax = np.pi
     ocp.constraints.lbu = np.array([-amax, -alphamax])
     ocp.constraints.ubu = np.array([+amax, +alphamax])
     ocp.constraints.idxbu = np.array([0, 1])

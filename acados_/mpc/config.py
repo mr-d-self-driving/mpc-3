@@ -1,16 +1,17 @@
 import os
 import numpy as np
 
-T = 1. # Time horizon
-N = 50  # number of control intervals
+T = 10. # Time horizon
+N = 40  # number of control intervals
 D = 0.5 # inter-axle
 
 e = 0.07
 
-init_ts = np.array([0, 0, np.pi/4, 0, 0])
-# init_ts = np.array([2, 1, np.pi/2, 0, 0])
-# xf, yf = [0, -3, -2, 1, 2], [3, 0, -3, -1, 1]
-xf, yf = [5], [7]
+# init_ts = np.array([0, 0, np.pi/4, 0, 0])
+# xf, yf = [5], [7]
+
+init_ts = np.array([2, 1, np.pi/2, 0, 0])
+xf, yf = [0, -3, -2, 1, 2], [3, 0, -3, -2, 1]
 num_targets_final = len(xf)
 
 base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # sorta hacky

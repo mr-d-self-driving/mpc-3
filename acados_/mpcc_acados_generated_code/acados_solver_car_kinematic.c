@@ -53,7 +53,7 @@
 #define NX     6
 #define NZ     0
 #define NU     3
-#define NP     0
+#define NP     12
 #define NBX    3
 #define NBX0   6
 #define NBU    3
@@ -259,7 +259,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
         capsule->forw_vde_casadi[i].casadi_sparsity_in = &car_kinematic_expl_vde_forw_sparsity_in;
         capsule->forw_vde_casadi[i].casadi_sparsity_out = &car_kinematic_expl_vde_forw_sparsity_out;
         capsule->forw_vde_casadi[i].casadi_work = &car_kinematic_expl_vde_forw_work;
-        external_function_param_casadi_create(&capsule->forw_vde_casadi[i], 0);
+        external_function_param_casadi_create(&capsule->forw_vde_casadi[i], 12);
     }
 
     capsule->expl_ode_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*N);
@@ -270,7 +270,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
         capsule->expl_ode_fun[i].casadi_sparsity_in = &car_kinematic_expl_ode_fun_sparsity_in;
         capsule->expl_ode_fun[i].casadi_sparsity_out = &car_kinematic_expl_ode_fun_sparsity_out;
         capsule->expl_ode_fun[i].casadi_work = &car_kinematic_expl_ode_fun_work;
-        external_function_param_casadi_create(&capsule->expl_ode_fun[i], 0);
+        external_function_param_casadi_create(&capsule->expl_ode_fun[i], 12);
     }
 
 
@@ -283,7 +283,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     capsule->ext_cost_0_fun.casadi_sparsity_out = &car_kinematic_cost_ext_cost_0_fun_sparsity_out;
     capsule->ext_cost_0_fun.casadi_work = &car_kinematic_cost_ext_cost_0_fun_work;
     
-    external_function_param_casadi_create(&capsule->ext_cost_0_fun, 0);
+    external_function_param_casadi_create(&capsule->ext_cost_0_fun, 12);
 
     // external cost
     
@@ -294,7 +294,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     capsule->ext_cost_0_fun_jac.casadi_sparsity_out = &car_kinematic_cost_ext_cost_0_fun_jac_sparsity_out;
     capsule->ext_cost_0_fun_jac.casadi_work = &car_kinematic_cost_ext_cost_0_fun_jac_work;
     
-    external_function_param_casadi_create(&capsule->ext_cost_0_fun_jac, 0);
+    external_function_param_casadi_create(&capsule->ext_cost_0_fun_jac, 12);
 
     // external cost
     
@@ -305,7 +305,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     capsule->ext_cost_0_fun_jac_hess.casadi_sparsity_out = &car_kinematic_cost_ext_cost_0_fun_jac_hess_sparsity_out;
     capsule->ext_cost_0_fun_jac_hess.casadi_work = &car_kinematic_cost_ext_cost_0_fun_jac_hess_work;
     
-    external_function_param_casadi_create(&capsule->ext_cost_0_fun_jac_hess, 0);
+    external_function_param_casadi_create(&capsule->ext_cost_0_fun_jac_hess, 12);
     // external cost
     capsule->ext_cost_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*N);
     for (int i = 0; i < N-1; i++)
@@ -318,7 +318,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
         capsule->ext_cost_fun[i].casadi_sparsity_out = &car_kinematic_cost_ext_cost_fun_sparsity_out;
         capsule->ext_cost_fun[i].casadi_work = &car_kinematic_cost_ext_cost_fun_work;
         
-        external_function_param_casadi_create(&capsule->ext_cost_fun[i], 0);
+        external_function_param_casadi_create(&capsule->ext_cost_fun[i], 12);
     }
 
     capsule->ext_cost_fun_jac = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*N);
@@ -332,7 +332,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
         capsule->ext_cost_fun_jac[i].casadi_sparsity_out = &car_kinematic_cost_ext_cost_fun_jac_sparsity_out;
         capsule->ext_cost_fun_jac[i].casadi_work = &car_kinematic_cost_ext_cost_fun_jac_work;
         
-        external_function_param_casadi_create(&capsule->ext_cost_fun_jac[i], 0);
+        external_function_param_casadi_create(&capsule->ext_cost_fun_jac[i], 12);
     }
 
     capsule->ext_cost_fun_jac_hess = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*N);
@@ -346,7 +346,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
         capsule->ext_cost_fun_jac_hess[i].casadi_sparsity_out = &car_kinematic_cost_ext_cost_fun_jac_hess_sparsity_out;
         capsule->ext_cost_fun_jac_hess[i].casadi_work = &car_kinematic_cost_ext_cost_fun_jac_hess_work;
         
-        external_function_param_casadi_create(&capsule->ext_cost_fun_jac_hess[i], 0);
+        external_function_param_casadi_create(&capsule->ext_cost_fun_jac_hess[i], 12);
     }
 
     /************************************************
@@ -410,8 +410,12 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     double* lbx0 = lubx0;
     double* ubx0 = lubx0 + NBX0;
     // change only the non-zero elements:
-    lbx0[2] = 1.0471975511965976;
-    ubx0[2] = 1.0471975511965976;
+    lbx0[0] = -2.5;
+    ubx0[0] = -2.5;
+    lbx0[1] = 0.5;
+    ubx0[1] = 0.5;
+    lbx0[2] = 0.7853981633974483;
+    ubx0[2] = 0.7853981633974483;
 
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "idxbx", idxbx0);
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "lbx", lbx0);
@@ -607,7 +611,9 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
     // initialize with x0
     
-    x0[2] = 1.0471975511965976;
+    x0[0] = -2.5;
+    x0[1] = 0.5;
+    x0[2] = 0.7853981633974483;
 
 
     double* u0 = xu0 + NX;
@@ -626,6 +632,27 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
 
 
+    // initialize parameters to nominal value
+    double* p = calloc(NP, sizeof(double));
+    
+    p[0] = 4.555371063571683;
+    p[1] = 2.9325424441079164;
+    p[2] = -7.689548357374925;
+    p[3] = -6.619195207936621;
+    p[4] = 4.38417729380324;
+    p[5] = 2.436652763828707;
+    p[6] = -0.9935177472778868;
+    p[7] = 2.463854827254421;
+    p[8] = 4.591346264073244;
+    p[9] = -3.462265893221747;
+    p[10] = -3.847828516795355;
+    p[11] = 1.248411065967321;
+
+    for (int i = 0; i <= N; i++)
+    {
+        car_kinematic_acados_update_params(capsule, i, p, NP);
+    }
+    free(p);
 
     status = ocp_nlp_precompute(capsule->nlp_solver, nlp_in, nlp_out);
 
@@ -643,12 +670,45 @@ int car_kinematic_acados_update_params(nlp_solver_capsule * capsule, int stage, 
 {
     int solver_status = 0;
 
-    int casadi_np = 0;
+    int casadi_np = 12;
     if (casadi_np != np) {
         printf("acados_update_params: trying to set %i parameters for external functions."
             " External function has %i parameters. Exiting.\n", np, casadi_np);
         exit(1);
     }
+    if (stage < 40 && stage >= 0)
+    {
+        capsule->forw_vde_casadi[stage].set_param(capsule->forw_vde_casadi+stage, p);
+        capsule->expl_ode_fun[stage].set_param(capsule->expl_ode_fun+stage, p);
+    
+
+        // constraints
+    
+
+        // cost
+        if (stage == 0)
+        {
+            capsule->ext_cost_0_fun.set_param(&capsule->ext_cost_0_fun, p);
+            capsule->ext_cost_0_fun_jac.set_param(&capsule->ext_cost_0_fun_jac, p);
+            capsule->ext_cost_0_fun_jac_hess.set_param(&capsule->ext_cost_0_fun_jac_hess, p);
+        
+        }
+        else // 0 < stage < N
+        {
+            capsule->ext_cost_fun[stage-1].set_param(capsule->ext_cost_fun+stage-1, p);
+            capsule->ext_cost_fun_jac[stage-1].set_param(capsule->ext_cost_fun_jac+stage-1, p);
+            capsule->ext_cost_fun_jac_hess[stage-1].set_param(capsule->ext_cost_fun_jac_hess+stage-1, p);
+        }
+    }
+
+    else // stage == N
+    {
+        // terminal shooting node has no dynamics
+        // cost
+        // constraints
+    
+    }
+
 
     return solver_status;
 }

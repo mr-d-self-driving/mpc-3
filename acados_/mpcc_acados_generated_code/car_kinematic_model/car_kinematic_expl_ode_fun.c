@@ -46,9 +46,9 @@ extern "C" {
 
 static const casadi_int casadi_s0[10] = {6, 1, 0, 6, 0, 1, 2, 3, 4, 5};
 static const casadi_int casadi_s1[7] = {3, 1, 0, 3, 0, 1, 2};
-static const casadi_int casadi_s2[3] = {0, 0, 0};
+static const casadi_int casadi_s2[16] = {12, 1, 0, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
-/* car_kinematic_expl_ode_fun:(i0[6],i1[3],i2[])->(o0[6]) */
+/* car_kinematic_expl_ode_fun:(i0[6],i1[3],i2[12])->(o0[6]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a2;
   a0=arg[0]? arg[0][4] : 0;

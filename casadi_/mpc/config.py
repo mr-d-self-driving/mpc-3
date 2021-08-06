@@ -18,10 +18,10 @@ T = 10. # Time horizon
 N = 40  # number of control intervals
 inter_axle = 0.5   # inter-axle distance
 
-ts = .04 # time-step
+ts = .033 # time-step
 e = 0.07 # epsilon (value for when solving stops)
 
 init_ts = [2, 1, cd.pi/2, 0, 0]
-xf, yf = [0, -3, -2, 1, 2], [3, 0, -3, -1, 1]
+xf, yf = [0, -3, -2, 1, 2], [3, 0, -3, -2, 1]
 
 num_targets_final = len(xf)

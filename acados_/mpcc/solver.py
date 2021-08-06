@@ -1,18 +1,18 @@
 from acados_template import AcadosOcp
 from acados_.mpcc.model import car_model
 import numpy as np
-import scipy.linalg
 
-def build_ocp(init_ts, cx, cy, order, Tf, N, D, export_dir):
+def build_ocp(init_ts, order, Tf, N, D, export_dir):
     # create ocp object to formulate the OCP
     ocp = AcadosOcp()
 
     # set model
-    model = car_model(D, order, cx, cy)
+    model = car_model(D, order)
     ocp.model = model
 
     nx = model.x.size()[0]
     nu = model.u.size()[0]
+    np_ = model.p.size()[0]
 
     simX = np.ndarray((N+1, nx))
     simU = np.ndarray((N, nu))
@@ -44,6 +44,8 @@ def build_ocp(init_ts, cx, cy, order, Tf, N, D, export_dir):
     ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
     ocp.solver_options.integrator_type = 'ERK'
     ocp.solver_options.nlp_solver_type = 'SQP' # SQP_RTI, SQP
+
+    ocp.parameter_values = np.zeros(np_)
 
     # set prediction horizon
     ocp.solver_options.tf = Tf

@@ -153,5 +153,5 @@ ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-# anim.save(cfg.anim_save_file, writer=writergif)
-plt.show()
+anim.save(cfg.anim_save_file, writer=writergif)
+# plt.show()

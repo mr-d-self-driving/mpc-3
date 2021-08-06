@@ -2,7 +2,7 @@ from acados_.mpcc.loss import gen_cost_func
 import casadi as cd
 from acados_template import AcadosModel
 
-def car_model(D, order, xc, yc):
+def car_model(D, order):
     model_name = "car_kinematic"
 
     x1 = cd.SX.sym('x1')
@@ -31,7 +31,10 @@ def car_model(D, order, xc, yc):
     # z = None
 
     # parameters
-    p = []
+    xc = cd.SX.sym('xc', order + 1, 1)
+    yc = cd.SX.sym('yc', order + 1, 1)
+
+    p = cd.vertcat(xc, yc)
 
     contour_cost = gen_cost_func(order)
     cost = contour_cost(pos=cd.vertcat(x1, y1), a=aux, alpha=alphaux, dt=dt, t=theta, t_dest=1.0, cx=xc, cy=yc)['cost']

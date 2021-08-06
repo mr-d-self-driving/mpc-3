@@ -47,7 +47,7 @@
 
 #include "simstruc.h"
 
-#define SAMPLINGTIME 0.02
+#define SAMPLINGTIME 0.25
 
 static void mdlInitializeSizes (SimStruct *S)
 {
@@ -69,17 +69,17 @@ static void mdlInitializeSizes (SimStruct *S)
     // y_ref_0
     ssSetInputPortVectorDimension(S, 2, 7);
     // y_ref
-    ssSetInputPortVectorDimension(S, 3, 343);
+    ssSetInputPortVectorDimension(S, 3, 273);
     // y_ref_e
     ssSetInputPortVectorDimension(S, 4, 5);
     // lbx
-    ssSetInputPortVectorDimension(S, 5, 98);
+    ssSetInputPortVectorDimension(S, 5, 78);
     // ubx
-    ssSetInputPortVectorDimension(S, 6, 98);
+    ssSetInputPortVectorDimension(S, 6, 78);
     // lbu
-    ssSetInputPortVectorDimension(S, 7, 100);
+    ssSetInputPortVectorDimension(S, 7, 80);
     // ubu
-    ssSetInputPortVectorDimension(S, 8, 100);/* specify dimension information for the OUTPUT ports */
+    ssSetInputPortVectorDimension(S, 8, 80);/* specify dimension information for the OUTPUT ports */
     ssSetOutputPortVectorDimension(S, 0, 2 );
     ssSetOutputPortVectorDimension(S, 1, 1 );
     ssSetOutputPortVectorDimension(S, 2, 1 );
@@ -179,7 +179,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     // y_ref - for stages 1 to N-1
     in_sign = ssGetInputPortRealSignalPtrs(S, 3);
 
-    for (int ii = 1; ii < 50; ii++)
+    for (int ii = 1; ii < 40; ii++)
     {
         for (int jj = 0; jj < 7; jj++)
             buffer[jj] = (double)(*in_sign[(ii-1)*7+jj]);
@@ -193,10 +193,10 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     for (int i = 0; i < 5; i++)
         buffer[i] = (double)(*in_sign[i]);
 
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 50, "yref", (void *) buffer);
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 40, "yref", (void *) buffer);
     // lbx
     in_sign = ssGetInputPortRealSignalPtrs(S, 5);
-    for (int ii = 1; ii < 50; ii++)
+    for (int ii = 1; ii < 40; ii++)
     {
         for (int jj = 0; jj < 2; jj++)
             buffer[jj] = (double)(*in_sign[(ii-1)*2+jj]);
@@ -204,7 +204,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     }
     // ubx
     in_sign = ssGetInputPortRealSignalPtrs(S, 6);
-    for (int ii = 1; ii < 50; ii++)
+    for (int ii = 1; ii < 40; ii++)
     {
         for (int jj = 0; jj < 2; jj++)
             buffer[jj] = (double)(*in_sign[(ii-1)*2+jj]);
@@ -212,7 +212,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     }
     // lbu
     in_sign = ssGetInputPortRealSignalPtrs(S, 7);
-    for (int ii = 0; ii < 50; ii++)
+    for (int ii = 0; ii < 40; ii++)
     {
         for (int jj = 0; jj < 2; jj++)
             buffer[jj] = (double)(*in_sign[ii*2+jj]);
@@ -220,7 +220,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     }
     // ubu
     in_sign = ssGetInputPortRealSignalPtrs(S, 8);
-    for (int ii = 0; ii < 50; ii++)
+    for (int ii = 0; ii < 40; ii++)
     {
         for (int jj = 0; jj < 2; jj++)
             buffer[jj] = (double)(*in_sign[ii*2+jj]);

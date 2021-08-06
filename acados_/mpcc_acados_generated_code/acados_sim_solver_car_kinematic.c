@@ -89,7 +89,7 @@ int car_kinematic_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_forw_vde_casadi->casadi_sparsity_in = &car_kinematic_expl_vde_forw_sparsity_in;
     capsule->sim_forw_vde_casadi->casadi_sparsity_out = &car_kinematic_expl_vde_forw_sparsity_out;
     capsule->sim_forw_vde_casadi->casadi_work = &car_kinematic_expl_vde_forw_work;
-    external_function_param_casadi_create(capsule->sim_forw_vde_casadi, 0);
+    external_function_param_casadi_create(capsule->sim_forw_vde_casadi, 12);
 
     capsule->sim_expl_ode_fun_casadi->casadi_fun = &car_kinematic_expl_ode_fun;
     capsule->sim_expl_ode_fun_casadi->casadi_n_in = &car_kinematic_expl_ode_fun_n_in;
@@ -97,7 +97,7 @@ int car_kinematic_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_expl_ode_fun_casadi->casadi_sparsity_in = &car_kinematic_expl_ode_fun_sparsity_in;
     capsule->sim_expl_ode_fun_casadi->casadi_sparsity_out = &car_kinematic_expl_ode_fun_sparsity_out;
     capsule->sim_expl_ode_fun_casadi->casadi_work = &car_kinematic_expl_ode_fun_work;
-    external_function_param_casadi_create(capsule->sim_expl_ode_fun_casadi, 0);
+    external_function_param_casadi_create(capsule->sim_expl_ode_fun_casadi, 12);
 
     
 
@@ -153,6 +153,24 @@ int car_kinematic_acados_sim_create(sim_solver_capsule * capsule)
     capsule->acados_sim_solver = car_kinematic_sim_solver;
 
     /* initialize parameter values */
+    
+    // initialize parameters to nominal value
+    double p[12];
+    
+    p[0] = 4.555371063571683;
+    p[1] = 2.9325424441079164;
+    p[2] = -7.689548357374925;
+    p[3] = -6.619195207936621;
+    p[4] = 4.38417729380324;
+    p[5] = 2.436652763828707;
+    p[6] = -0.9935177472778868;
+    p[7] = 2.463854827254421;
+    p[8] = 4.591346264073244;
+    p[9] = -3.462265893221747;
+    p[10] = -3.847828516795355;
+    p[11] = 1.248411065967321;
+    capsule->sim_forw_vde_casadi[0].set_param(capsule->sim_forw_vde_casadi, p);
+    capsule->sim_expl_ode_fun_casadi[0].set_param(capsule->sim_expl_ode_fun_casadi, p);
     
 
     /* initialize input */
@@ -223,7 +241,7 @@ int car_kinematic_acados_sim_free(sim_solver_capsule *capsule)
 int car_kinematic_acados_sim_update_params(sim_solver_capsule *capsule, double *p, int np)
 {
     int status = 0;
-    int casadi_np = 0;
+    int casadi_np = 12;
 
     if (casadi_np != np) {
         printf("car_kinematic_acados_sim_update_params: trying to set %i parameters for external functions."
