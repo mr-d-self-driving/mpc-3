@@ -1,9 +1,9 @@
 from acados_template import AcadosOcp
-from acados_.mpc.model import car_model
+from acados_.mpc2.model2 import car_model
 import numpy as np
 import scipy.linalg
 
-def build_ocp(init_ts, target, Tf, N, D, export_dir):
+def build_ocp(init_ts, Tf, N, D, export_dir):
     # create ocp object to formulate the OCP
     ocp = AcadosOcp()
 
@@ -13,7 +13,6 @@ def build_ocp(init_ts, target, Tf, N, D, export_dir):
 
     nx = model.x.size()[0]
     nu = model.u.size()[0]
-    ny = nx + nu
     
     simX = np.ndarray((N+1, nx))
     simU = np.ndarray((N, nu))
@@ -22,34 +21,12 @@ def build_ocp(init_ts, target, Tf, N, D, export_dir):
     ocp.dims.N = N
 
     # set cost
-    Q = np.diag([1e0, 1e0, 1e-7, 1e-7, 1e-7])
-    R = np.diag([1e-1, 1e-1])
-
-    unscale = N / Tf
-
-    ocp.cost.W_e = Q / unscale
-    ocp.cost.W = unscale * scipy.linalg.block_diag(Q, R)
-
-    ocp.cost.cost_type = 'LINEAR_LS'
-    ocp.cost.cost_type_e = 'LINEAR_LS'
-
-    ocp.cost.Vx = np.zeros((ny, nx))
-    ocp.cost.Vx[:nx,:nx] = np.eye(nx)
-
-    Vu = np.zeros((ny, nu))
-    Vu[5,0] = 1.0
-    Vu[6,1] = 1.0
-    ocp.cost.Vu = Vu
-
-    ocp.cost.Vx_e = np.eye(nx)
-
-    ocp.cost.yref  = np.array(target)
-    ocp.cost.yref_e = np.array(target[:-2])
+    ocp.cost.cost_type = 'EXTERNAL'
 
     # set constraints
     deltamax = np.pi/4
     ocp.constraints.lbx = np.array([-deltamax, 0])
-    ocp.constraints.ubx = np.array([+deltamax, 2])
+    ocp.constraints.ubx = np.array([+deltamax, 2.])
     ocp.constraints.idxbx = np.array([3, 4])
 
     amax = 1.0

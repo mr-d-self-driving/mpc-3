@@ -3,12 +3,14 @@ from casadi_.mpcc.utils import gen_t
 import casadi as cd
 import matplotlib.pyplot as plt
 import numpy as np
-
 import casadi_.mpcc.config as cfg
+
+from casadi_.solvers.mpcc_rk4 import build_solver as solver_rk4
+from casadi_.solvers.mpcc_colloc import build_solver as solver_colloc
 
 plt.style.use('ggplot')
 
-build_solver = cfg.solver
+build_solver = solver_rk4 if cfg.solve_method == 'rk4' else solver_colloc
 T = cfg.T
 N = cfg.N
 inter_axle = cfg.inter_axle

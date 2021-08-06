@@ -5,5 +5,5 @@
 # from casadi_.mpcc import animation_simple
 
 # from acados_.mpc import plot
-# from acados_.mpc import animation
-from acados_.mpcc import plot
+from acados_.mpc import animation
+# from acados_.mpcc import plot

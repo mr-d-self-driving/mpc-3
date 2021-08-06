@@ -1,4 +1,4 @@
-from acados_.mpc.solver import build_ocp
+from acados_.mpc2.solver2 import build_ocp
 from acados_template import AcadosOcpSolver
 
 import matplotlib.pyplot as plt
@@ -13,11 +13,11 @@ D = cfg.D
 
 init_ts = np.array(cfg.init_ts)
 xf, yf = cfg.xf[0], cfg.yf[0]
-target = [xf, yf] + [0]*5
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-ocp, simX, simU = build_ocp(init_ts, target, T, N, D, cfg.code_export_dir)
+ocp, simX, simU = build_ocp(init_ts, T, N, D, cfg.code_export_dir)
+ocp.parameter_values = np.array([xf, yf])
 ocp_solver = AcadosOcpSolver(ocp, json_file = 'acados_ocp.json')
 status = ocp_solver.solve()
 

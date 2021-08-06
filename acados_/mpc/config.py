@@ -1,17 +1,19 @@
 import os
 import numpy as np
 
-T = 10. # Time horizon
-N = 40  # number of control intervals
-D = 0.5
+T = 1. # Time horizon
+N = 50  # number of control intervals
+D = 0.5 # inter-axle
 
-ts = .04
-e = 0.1
-num_targets_final = 1
+e = 0.07
 
-xf, yf = [2.0], [3.0]
-init_ts = np.array([0.0, 0.0, np.pi/4, 0.0, 0.0])
+init_ts = np.array([0, 0, np.pi/4, 0, 0])
+# init_ts = np.array([2, 1, np.pi/2, 0, 0])
+# xf, yf = [0, -3, -2, 1, 2], [3, 0, -3, -1, 1]
+xf, yf = [5], [7]
+num_targets_final = len(xf)
 
+base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # sorta hacky
 curr_path = os.path.dirname(os.path.dirname(__file__)) # sorta hacky
 out_path = os.path.join(curr_path, 'out')
 code_export_dir = os.path.join(curr_path, 'mpc_acados_generated_code')

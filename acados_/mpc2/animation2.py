@@ -1,4 +1,4 @@
-from acados_.mpc.solver import build_ocp
+from acados_.mpc2.solver2 import build_ocp
 from acados_template import AcadosOcpSolver, AcadosSimSolver
 
 import matplotlib.pyplot as plt
@@ -12,25 +12,29 @@ T = cfg.T
 N = cfg.N
 D = cfg.D
 
-init_ts = cfg.init_ts
-xc, yc = init_ts[0], init_ts[1]
+xcurrent = cfg.init_ts
 xf, yf = cfg.xf[0], cfg.yf[0]
 target = [xf, yf] + [0]*5
 
 e = cfg.e
 
 keep_going = True
+reset_target = False
 num_targets = 0
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
 
-def solve_mpc():
-    
-    step_x, step_y = xf - xc, yf - yc
-    for i in range(N):
-        yref = np.array([step_x*i/N, step_y*i/N, 0, 0, 0, 0, 0])
-        ocp_solver.set(i, 'yref', yref)
-    ocp_solver.cost_set(N, 'yref', np.array([xf, yf, 0, 0, 0]))
+def solve_mpc(is_start=False):
+    global xcurrent, reset_target
+
+    if reset_target:
+        global ocp
+        ocp.parameter_values = np.array([xf, yf])
+        reset_target = False
+
+    if not is_start:
+        ocp_solver.set(0, 'lbx', xcurrent)
+        ocp_solver.set(0, 'ubx', xcurrent)
 
     for i in range(N):
         simX[i,:] = ocp_solver.get(i, 'x')
@@ -39,13 +43,22 @@ def solve_mpc():
 
     status = ocp_solver.solve()
     if status != 0:
-        ocp_solver.print_statistics()
         raise Exception('acados acados_ocp_solver returned status {}. Exiting.'.format(status))
 
-    x0 = ocp_solver.get(1, 'x')
-    ocp_solver.set(0, 'lbx', x0)
-    ocp_solver.set(0, 'ubx', x0)
+    # simulate system
+    integrator.set('x', xcurrent)
+    integrator.set('u', ocp_solver.get(0, 'u'))
 
+    print('xcurrent', xcurrent)
+    print('ucurrent', ocp_solver.get(0, 'u'))
+    print('target', ocp.parameter_values)
+
+    status = integrator.solve()
+    if status != 0:
+        raise Exception('acados integrator returned status {}. Exiting.'.format(status))
+
+    # update state
+    xcurrent = integrator.get('x')
     return simX, simU
 
 def gen():
@@ -57,7 +70,7 @@ def gen():
             if num_targets < cfg.num_targets_final: 
                 global xf, yf, target
                 xf, yf = cfg.xf[num_targets], cfg.yf[num_targets]
-                target = [xf, yf] + [0]*5
+                print('\n(xf, yf)', xf, yf)
             else: break
             print('number of targets reached:', num_targets)
             keep_going = True
@@ -65,7 +78,7 @@ def gen():
         yield i
 
 def update(i):
-    global init_ts, keep_going, xc, yc
+    global init_ts, keep_going, reset_target
 
     simX, simU = solve_mpc()
 
@@ -81,22 +94,24 @@ def update(i):
     alphaux_line.set_ydata(np.append(np.nan, alpha_dat))
 
     traj.set_data(simX_t[0], simX_t[1])
-    xc, yc = simX[0][0], simX[0][1]
-    curr_pt.set_data([xc], [yc])
+    curr_pt.set_data([simX[0][0]], [simX[0][1]])
     target_pt.set_data([xf], [yf])
 
-    if abs(xc-xf) < e and abs(yc-yf) < e:
+    if abs(simX[0][0]-xf) < e and abs(simX[0][1]-yf) < e:
         keep_going = False
+        reset_target = True
     
     return [x_line, y_line, aux_line, alphaux_line, traj, curr_pt]
 
 tgrid = [T/N*k for k in range(N+1)]
 
-ocp, simX, simU = build_ocp(init_ts, target, T, N, D, cfg.code_export_dir)
+ocp, simX, simU = build_ocp(xcurrent, T, N, D, cfg.code_export_dir)
+ocp.parameter_values = np.array([xf, yf])
 ocp_solver = AcadosOcpSolver(ocp, json_file=cfg.json_path)
+integrator = AcadosSimSolver(ocp, json_file=cfg.json_path)
 
 # get solution
-simX, simU = solve_mpc()
+simX, simU = solve_mpc(is_start=True)
 
 simX_t = simX.T
 a_dat, alpha_dat = simU.T
@@ -121,7 +136,7 @@ ax2.set_xlabel('x-axis')
 
 # plot curve
 traj, = ax2.plot(simX_t[0], simX_t[1], '-', color='green', alpha=0.4)
-curr_pt, = ax2.plot([xc], [yc], marker='o', color='black')
+curr_pt, = ax2.plot([xcurrent[0]], [xcurrent[1]], marker='o', color='black')
 target_pt, = ax2.plot([xf], [yf], marker='x', color='black')
 ax2.grid(True)
 

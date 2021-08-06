@@ -72,7 +72,7 @@
 #define NY0    7
 #define NY     7
 #define NYN    5
-#define N      40
+#define N      50
 #define NH     0
 #define NPHI   0
 #define NHN    0
@@ -284,7 +284,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
     // set up time_steps
     // all time_steps are identical
-    double time_step = 0.25;
+    double time_step = 0.02;
     for (int i = 0; i < N; i++)
     {
         ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, i, "Ts", &time_step);
@@ -304,17 +304,20 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
     double* W_0 = calloc(NY0*NY0, sizeof(double));
     // change only the non-zero elements:
-    W_0[0+(NY0) * 0] = 1;
-    W_0[1+(NY0) * 1] = 1;
-    W_0[5+(NY0) * 5] = 1;
-    W_0[6+(NY0) * 6] = 1;
+    W_0[0+(NY0) * 0] = 50;
+    W_0[1+(NY0) * 1] = 50;
+    W_0[2+(NY0) * 2] = 0.000005;
+    W_0[3+(NY0) * 3] = 0.000005;
+    W_0[4+(NY0) * 4] = 0.000005;
+    W_0[5+(NY0) * 5] = 5;
+    W_0[6+(NY0) * 6] = 5;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "W", W_0);
     free(W_0);
 
     double* yref_0 = calloc(NY0, sizeof(double));
     // change only the non-zero elements:
-    yref_0[0] = 2;
-    yref_0[1] = 3;
+    yref_0[0] = 5;
+    yref_0[1] = 7;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "yref", yref_0);
     free(yref_0);
 
@@ -323,15 +326,18 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     double* W = calloc(NY*NY, sizeof(double));
     // change only the non-zero elements:
     
-    W[0+(NY) * 0] = 1;
-    W[1+(NY) * 1] = 1;
-    W[5+(NY) * 5] = 1;
-    W[6+(NY) * 6] = 1;
+    W[0+(NY) * 0] = 50;
+    W[1+(NY) * 1] = 50;
+    W[2+(NY) * 2] = 0.000005;
+    W[3+(NY) * 3] = 0.000005;
+    W[4+(NY) * 4] = 0.000005;
+    W[5+(NY) * 5] = 5;
+    W[6+(NY) * 6] = 5;
 
     double* yref = calloc(NY, sizeof(double));
     // change only the non-zero elements:
-    yref[0] = 2;
-    yref[1] = 3;
+    yref[0] = 5;
+    yref[1] = 7;
 
     for (int i = 1; i < N; i++)
     {
@@ -402,16 +408,19 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     double* yref_e = calloc(NYN, sizeof(double));
     // change only the non-zero elements:
     
-    yref_e[0] = 2;
-    yref_e[1] = 3;
+    yref_e[0] = 5;
+    yref_e[1] = 7;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", yref_e);
     free(yref_e);
 
     double* W_e = calloc(NYN*NYN, sizeof(double));
     // change only the non-zero elements:
     
-    W_e[0+(NYN) * 0] = 1;
-    W_e[1+(NYN) * 1] = 1;
+    W_e[0+(NYN) * 0] = 0.02;
+    W_e[1+(NYN) * 1] = 0.02;
+    W_e[2+(NYN) * 2] = 0.0000000019999999999999993;
+    W_e[3+(NYN) * 3] = 0.0000000019999999999999993;
+    W_e[4+(NYN) * 4] = 0.0000000019999999999999993;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "W", W_e);
     free(W_e);
     double* Vx_e = calloc(NYN*NX, sizeof(double));
@@ -608,7 +617,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     double nlp_solver_tol_comp = 0.000001;
     ocp_nlp_solver_opts_set(nlp_config, capsule->nlp_opts, "tol_comp", &nlp_solver_tol_comp);
 
-    int nlp_solver_max_iter = 100;
+    int nlp_solver_max_iter = 400;
     ocp_nlp_solver_opts_set(nlp_config, capsule->nlp_opts, "max_iter", &nlp_solver_max_iter);
 
     int initialize_t_slacks = 0;
@@ -701,7 +710,7 @@ int car_kinematic_acados_free(nlp_solver_capsule * capsule)
 
     /* free external function */
     // dynamics
-    for (int i = 0; i < 40; i++)
+    for (int i = 0; i < 50; i++)
     {
         external_function_param_casadi_free(&capsule->forw_vde_casadi[i]);
         external_function_param_casadi_free(&capsule->expl_ode_fun[i]);
@@ -733,7 +742,7 @@ void car_kinematic_acados_print_stats(nlp_solver_capsule * capsule)
     ocp_nlp_get(capsule->nlp_config, capsule->nlp_solver, "stat_m", &stat_m);
 
     
-    double stat[1000];
+    double stat[4000];
     ocp_nlp_get(capsule->nlp_config, capsule->nlp_solver, "statistics", stat);
 
     int nrow = sqp_iter+1 < stat_m ? sqp_iter+1 : stat_m;

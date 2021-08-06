@@ -44,16 +44,7 @@ def solve_mpc():
     lbw = init_ts + lbw_suffix
     ubw = init_ts + ubw_suffix
 
-    if rebuild_solver:
-        global solver, params, trajectories
-        solver, params, trajectories = build_solver(init_ts, T, N, inter_axle)
-        print('Rebuilt solver')
-        rebuild_solver = False
-
-        w0 = init_ts + w0_suffix
-        sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
-    else:
-        sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
+    sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
 
     # cost = sol['f'].full().flatten()
 
@@ -148,16 +139,6 @@ ax1.legend([r'$x_f - x$',r'$y_f - y$', r'$a$', r'$\alpha$'])
 ax1.set_xlabel('Time horizon')
 ax1.grid(True)
 
-# ax3.set_xlim([0, int(T)])
-# ax3.set_ylim([-5, 5])
-# x_line, = ax3.plot(tgrid, x_diff, '-', color='gray')
-# y_line, = ax3.plot(tgrid, y_diff, '-', color='black')
-
-# ax3.set_title('Distance from Target')
-# ax3.legend([r'$x_f - x$',r'$y_f - y$'])
-# ax3.set_xlabel('Time horizon')
-# ax3.grid(True)
-
 # ax2.set_title('Trajectory')
 ax2.set_ylim([-5, 5])
 ax2.set_xlim([-5, 5])
@@ -172,5 +153,5 @@ ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save(cfg.anim_save_file, writer=writergif)
-# plt.show()
+# anim.save(cfg.anim_save_file, writer=writergif)
+plt.show()
