@@ -16,6 +16,7 @@ out_path = os.path.join(curr_path, 'out')
 os.makedirs(out_path, exist_ok=True)
 os.makedirs(os.path.join(curr_path, 'out', 'log'), exist_ok=True)
 os.makedirs(os.path.join(curr_path, 'out', 'time'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out', 'eval'), exist_ok=True)
 
 out_log_file = os.path.join(out_path, 'log', '_'.join([prefix, 'out.txt']))
 
