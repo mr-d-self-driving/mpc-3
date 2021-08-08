@@ -99,10 +99,10 @@ def build_solver(init_ts, T, N, inter_axle):
     for k in range(N):
         # New NLP variable for the control
         Uk = cd.SX.sym('U_' + str(k), 2)
-        w += [Uk]
-        lbw += [-2*cd.pi, -1]
-        ubw += [ 2*cd.pi,  1]
-        w0 += [0, 0]
+        w   += [Uk]
+        lbw += [-cd.pi, -1]
+        ubw += [ cd.pi,  1]
+        w0  += [0, 0]
         u_plot += [Uk]
 
         # State at collocation points
@@ -113,7 +113,7 @@ def build_solver(init_ts, T, N, inter_axle):
             w += [Xkj]
             lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0]
             ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2]
-            w0 += [0, 0, 0, 0, 0]
+            w0  += [0, 0, 0, 0, 0]
 
         # Loop over collocation points
         Xk_end = D[0]*Xk
@@ -136,14 +136,14 @@ def build_solver(init_ts, T, N, inter_axle):
 
         # New NLP variable for state at end of interval
         Xk = cd.SX.sym('X_' + str(k+1), 5)
-        w += [Xk]
+        w   += [Xk]
         lbw += [-cd.inf, -cd.inf, -cd.inf, -cd.pi/4,  0]
         ubw += [ cd.inf,  cd.inf,  cd.inf,  cd.pi/4,  2]
-        w0 += [0, 0, 0, 0, 0]
+        w0  += [0, 0, 0, 0, 0]
         coord_plot += [Xk]
 
         # Add equality constraint
-        g += [Xk_end-Xk]
+        g   += [Xk_end-Xk]
         lbg += [0, 0, 0, 0, 0]
         ubg += [0, 0, 0, 0, 0]
 
@@ -160,10 +160,11 @@ def build_solver(init_ts, T, N, inter_axle):
 
     # Create an NLP solver
     solver_opts = {}
-    solver_opts['print_time'] = 0
-    solver_opts['ipopt.print_level'] = 0
-    solver_opts['ipopt.max_cpu_time'] = .5
-    solver_opts['ipopt.linear_solver'] = 'ma57'
+    solver_opts['ipopt.check_derivatives_for_naninf'] = 'yes'
+    solver_opts['ipopt.output_file'] = cfg.out_log_file
+    solver_opts['ipopt.print_level'] = 5
+    solver_opts['ipopt.max_cpu_time'] = .7
+    solver_opts['ipopt.linear_solver'] = cfg.ipopt_solver
 
     warm_start_opts = {}
     warm_start_opts['ipopt.warm_start_init_point'] = 'yes'
@@ -182,7 +183,7 @@ def build_solver(init_ts, T, N, inter_axle):
         solver.generate_dependencies('nlp.c')                                        
         system('gcc -fPIC -shared -O3 nlp.c -o nlp.so')
     if cfg.use_compiled:
-        solver = cd.nlpsol('solver', 'ipopt', cfg.compiled_path, merge_dict(solver_opts, warm_start_opts))
+        solver = cd.nlpsol('solver', 'ipopt', 'nlp.so', merge_dict(solver_opts, warm_start_opts))
 
     # Function to get x and u trajectories from w
     trajectories = cd.Function('trajectories', [w], [coord_plot, u_plot], ['w'], ['x', 'u'])

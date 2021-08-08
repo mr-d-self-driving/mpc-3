@@ -5,12 +5,17 @@ import casadi as cd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+import csv
 import casadi_.mpcc.config as cfg
 
 from casadi_.solvers.mpcc_rk4 import build_solver as solver_rk4
 from casadi_.solvers.mpcc_colloc import build_solver as solver_colloc
 
 plt.style.use('ggplot')
+
+if cfg.log_time:
+    pred = open(cfg.pred_csv, 'w', newline='')
+    pred_writer = csv.writer(pred)
 
 build_solver = solver_rk4 if cfg.solve_method == 'rk4' else solver_colloc
 T = cfg.T

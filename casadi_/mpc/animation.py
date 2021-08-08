@@ -1,10 +1,10 @@
-from casadi_.mpc.utils import compute_step
+from casadi_.mpc.utils import compute_step, get_timing
 
-import time
 import casadi as cd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+import csv
 import casadi_.mpc.config as cfg
 
 from casadi_.solvers.mpc_rk4 import build_solver as solver_rk4
@@ -28,12 +28,6 @@ xf, yf = cfg.xf[num_targets], cfg.yf[num_targets]
 init_ts = cfg.init_ts
 
 fig, (ax1, ax2) =  plt.subplots(1, 2, figsize=(10, 5))
-# fig = plt.figure(figsize=(16, 8))
-
-# gs = fig.add_gridspec(2,2)
-# ax1 = fig.add_subplot(gs[0, 0])
-# ax3 = fig.add_subplot(gs[1, 0])
-# ax2 = fig.add_subplot(gs[:, 1])
 
 solver, params, trajectories = build_solver(init_ts, T, N, inter_axle)
 w0_suffix, lbw_suffix, ubw_suffix, lbg, ubg = params
@@ -153,5 +147,17 @@ ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save(cfg.anim_save_file, writer=writergif)
-# plt.show()
+# anim.save(cfg.anim_save_file, writer=writergif)
+plt.show()
+
+if cfg.log_time:
+    with open(cfg.out_log_file, 'r') as f:
+        tmp = ' '.join(f.read().split('\n'))
+    timing = get_timing(tmp)
+
+time_fl = open(cfg.time_csv, 'w')
+time_writer = csv.writer(time_fl)
+time_writer.writerow(['IN_IPOPT', 'IN_NLP'])
+for t in timing:
+    time_writer.writerow(list(t))
+time_fl.close()
