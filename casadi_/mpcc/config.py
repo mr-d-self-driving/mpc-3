@@ -17,7 +17,7 @@ compiled_path = os.path.join(compiled_path, 'nlp.so')
 
 log_pred = False
 
-anim_save_file = os.path.join(out_path, 'casadi_mpcc_' + solve_method +'.gif')
+anim_save_file = os.path.join(out_path, '1_casadi_mpcc_' + solve_method +'.gif')
 pred_csv = os.path.join(out_path, 'pred.csv')
 true_csv = os.path.join(out_path, 'true.csv')
 
@@ -25,7 +25,7 @@ T = 10. # Time horizon
 N = 40  # number of control intervals
 inter_axle = 0.5   # inter-axle distance
 
-ts = .04 # time-step
+ts = .08 # time-step
 e = 0.1 # epsilon (value for when solving stops)
 
 # 5th-order

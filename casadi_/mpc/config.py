@@ -18,7 +18,7 @@ T = 10. # Time horizon
 N = 40  # number of control intervals
 inter_axle = 0.5   # inter-axle distance
 
-ts = .033 # time-step
+ts = .08 # time-step
 e = 0.07 # epsilon (value for when solving stops)
 
 init_ts = [2, 1, cd.pi/2, 0, 0]

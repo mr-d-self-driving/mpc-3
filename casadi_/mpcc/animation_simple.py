@@ -77,6 +77,7 @@ def gen():
                 tplt = np.linspace(0, 1)
                 xplt = xpoly(tplt)
                 yplt = ypoly(tplt)
+            else: break
             print('number of targets reached:', num_targets)
             keep_going = True
         else: i += 1
