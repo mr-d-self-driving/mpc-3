@@ -1,4 +1,4 @@
-from casadi_.mpcc.utils import get_curve, compute_step
+from casadi_.mpcc.utils import get_curve, compute_step, get_timing
 from casadi_.mpcc.loss import gen_cost_func
 
 import casadi as cd
@@ -12,10 +12,6 @@ from casadi_.solvers.mpcc_rk4 import build_solver as solver_rk4
 from casadi_.solvers.mpcc_colloc import build_solver as solver_colloc
 
 plt.style.use('ggplot')
-
-if cfg.log_time:
-    pred = open(cfg.pred_csv, 'w', newline='')
-    pred_writer = csv.writer(pred)
 
 build_solver = solver_rk4 if cfg.solve_method == 'rk4' else solver_colloc
 T = cfg.T
@@ -179,5 +175,17 @@ ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=30)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save(cfg.anim_save_file, writer=writergif)
-# plt.show()
+# anim.save(cfg.anim_save_file, writer=writergif)
+plt.show()
+
+if cfg.log_time:
+    with open(cfg.out_log_file, 'r') as f:
+        tmp = ' '.join(f.read().split('\n'))
+    timing = get_timing(tmp)
+
+time_fl = open(cfg.time_csv, 'w')
+time_writer = csv.writer(time_fl)
+time_writer.writerow(['IN_IPOPT', 'IN_NLP'])
+for t in timing:
+    time_writer.writerow(list(t))
+time_fl.close()

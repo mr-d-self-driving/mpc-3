@@ -12,11 +12,11 @@ prefix = '_'.join(['mpc', ipopt_solver, solve_method])
 if use_compiled: prefix += '_compiled'
 
 curr_path = os.path.dirname(os.path.dirname(__file__)) # sorta hacky
-out_path = os.path.join(curr_path, 'out')
+out_path = os.path.join(curr_path, 'out_mpc')
 os.makedirs(out_path, exist_ok=True)
-os.makedirs(os.path.join(curr_path, 'out', 'log'), exist_ok=True)
-os.makedirs(os.path.join(curr_path, 'out', 'time'), exist_ok=True)
-os.makedirs(os.path.join(curr_path, 'out', 'eval'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpc', 'log'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpc', 'time'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpc', 'eval'), exist_ok=True)
 
 out_log_file = os.path.join(out_path, 'log', '_'.join([prefix, 'out.txt']))
 

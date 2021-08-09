@@ -1,23 +1,29 @@
 import casadi as cd
 import os
 
-ipopt_solver = 'mumps'
+ipopt_solver = 'ma57'
 solve_method = 'rk4'
 
+gen_compiled = True
+use_compiled = True
+
+prefix = '_'.join(['mpcc', ipopt_solver, solve_method])
+if use_compiled: prefix += '_compiled'
+
 curr_path = os.path.dirname(os.path.dirname(__file__)) # sorta hacky
-out_path = os.path.join(curr_path, 'out')
-compiled_path = os.path.join(curr_path, 'compiled')
-
+out_path = os.path.join(curr_path, 'out_mpcc')
 os.makedirs(out_path, exist_ok=True)
-os.makedirs(compiled_path, exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpcc', 'log'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpcc', 'time'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpcc', 'eval'), exist_ok=True)
 
-gen_compiled = False
-use_compiled = False
-compiled_path = os.path.join(compiled_path, 'nlp.so')
+out_log_file = os.path.join(out_path, 'log', '_'.join([prefix, 'out.txt']))
 
-log_pred = False
+log_time = True
+time_csv = os.path.join(out_path, 'time', '_'.join([prefix, 'time.csv']))
 
-anim_save_file = os.path.join(out_path, '1_casadi_mpcc_' + solve_method +'.gif')
+anim_save_file = os.path.join(out_path, prefix +'.gif')
+
 pred_csv = os.path.join(out_path, 'pred.csv')
 true_csv = os.path.join(out_path, 'true.csv')
 
@@ -54,5 +60,5 @@ curve_5 = {'init_ts': [-2.5, .5, cd.pi/4, 0, 0, 0],
            'ypts': [.5, 1.25, 2, 0, -1, 0],
            'order': 5}
 
-curves_lst = [curve_1, curve_2, curve_3, curve_4, curve_5]
+curves_lst = [curve_1]
 num_targets_final = len(curves_lst)

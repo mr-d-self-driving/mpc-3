@@ -1,6 +1,14 @@
 import casadi as cd
 import pandas as pd
 import numpy as np
+import re
+
+def get_timing(txt):
+    pattern = r'Total CPU secs in IPOPT \(w/o function evaluations\)   =      (.*?) Total CPU secs in NLP function evaluations           =      (.*?)  EXIT'
+
+    time = re.findall(pattern, txt)
+    time = [tuple(float(v) for v in t) for t in time]
+    return time
 
 def gen_t(pts1, pts2):
     tpts = [0]
