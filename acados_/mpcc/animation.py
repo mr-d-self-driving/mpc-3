@@ -1,14 +1,20 @@
 from acados_.mpcc.solver import build_ocp
-from acados_.mpcc.utils import get_curve
+from acados_.mpcc.utils import get_curve, compute_step
 from acados_template import AcadosOcpSolver
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import random as rd
+import csv
+import time
 import acados_.mpcc.config as cfg
 
 plt.style.use('ggplot')
+
+if cfg.log_simple_time:
+    simple_time_csv = open(cfg.simple_time_csv, 'w')
+    simple_time_writer = csv.writer(simple_time_csv)
 
 T = cfg.T
 N = cfg.N
@@ -21,6 +27,7 @@ print(cx, cy)
 
 tgrid = np.linspace(0, T, N+1)
 e = cfg.e
+ts = cfg.ts
 
 keep_going = True
 rebuild_solver = False
@@ -59,7 +66,12 @@ def solve_mpc():
         ocp_solver.set(i, 'p', p)
     ocp_solver.set(N, 'p', p)
 
+    t0 = time.time()
     status = ocp_solver.solve()
+    t1 = time.time()
+    if cfg.log_simple_time:
+        simple_time_writer.writerow([t1-t0])
+
     if status != 0:
         ocp_solver.print_statistics()
         raise Exception('acados acados_ocp_solver returned status {}. Exiting.'.format(status))
@@ -72,7 +84,7 @@ def solve_mpc():
     # cost = ocp_solver.get_cost()
     # print('cost', cost)
 
-    x0 = simX[1]
+    x0 = compute_step(list(simX[0]) + list(simU[0]), ts, D)
     ocp_solver.set(0, 'lbx', x0)
     ocp_solver.set(0, 'ubx', x0)
 
@@ -188,3 +200,6 @@ writergif = animation.PillowWriter(fps=10)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
 # anim.save(cfg.anim_save_file, writer=writergif)
 plt.show()
+
+if cfg.log_simple_time:
+    simple_time_csv.close()

@@ -410,12 +410,8 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     double* lbx0 = lubx0;
     double* ubx0 = lubx0 + NBX0;
     // change only the non-zero elements:
-    lbx0[0] = -2.5;
-    ubx0[0] = -2.5;
-    lbx0[1] = 0.5;
-    ubx0[1] = 0.5;
-    lbx0[2] = 0.7853981633974483;
-    ubx0[2] = 0.7853981633974483;
+    lbx0[2] = 1.0471975511965976;
+    ubx0[2] = 1.0471975511965976;
 
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "idxbx", idxbx0);
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "lbx", lbx0);
@@ -611,9 +607,7 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
 
     // initialize with x0
     
-    x0[0] = -2.5;
-    x0[1] = 0.5;
-    x0[2] = 0.7853981633974483;
+    x0[2] = 1.0471975511965976;
 
 
     double* u0 = xu0 + NX;
@@ -635,18 +629,18 @@ int car_kinematic_acados_create(nlp_solver_capsule * capsule)
     // initialize parameters to nominal value
     double* p = calloc(NP, sizeof(double));
     
-    p[0] = 4.555371063571683;
-    p[1] = 2.9325424441079164;
-    p[2] = -7.689548357374925;
-    p[3] = -6.619195207936621;
-    p[4] = 4.38417729380324;
-    p[5] = 2.436652763828707;
-    p[6] = -0.9935177472778868;
-    p[7] = 2.463854827254421;
-    p[8] = 4.591346264073244;
-    p[9] = -3.462265893221747;
-    p[10] = -3.847828516795355;
-    p[11] = 1.248411065967321;
+    p[0] = -0.13845493629437283;
+    p[1] = 0.05992500482481614;
+    p[2] = 0.20059897207952213;
+    p[3] = 0.2308648431321515;
+    p[4] = 1.587855964214851;
+    p[5] = 1.359210152043032;
+    p[6] = -0.7912579663643691;
+    p[7] = -0.9303086023552128;
+    p[8] = -0.27779206638047177;
+    p[9] = -0.38528319292057894;
+    p[10] = 2.069050032744843;
+    p[11] = 2.3155917952757923;
 
     for (int i = 0; i <= N; i++)
     {

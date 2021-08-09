@@ -1,16 +1,24 @@
+from acados_.mpc.utils import compute_step
 from acados_.mpc.solver import build_ocp
-from acados_template import AcadosOcpSolver, AcadosSimSolver
+from acados_template import AcadosOcpSolver
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import acados_.mpc.config as cfg
+import time
+import csv
 
 plt.style.use('ggplot')
+
+if cfg.log_simple_time:
+    simple_time_csv = open(cfg.simple_time_csv, 'w')
+    simple_time_writer = csv.writer(simple_time_csv)
 
 T = cfg.T
 N = cfg.N
 D = cfg.D
+ts = cfg.ts
 
 init_ts = cfg.init_ts
 xc, yc = init_ts[0], init_ts[1]
@@ -30,8 +38,14 @@ def solve_mpc():
         yref = np.array([xf, yf, 0, 0, 0, 0, 0])
         ocp_solver.set(i, 'yref', yref)
     ocp_solver.set(N, 'yref', np.array([xf, yf, 0, 0, 0]))
-
+    
+    t0 = time.time()
     status = ocp_solver.solve()
+    t1 = time.time()
+
+    if cfg.log_simple_time:
+        simple_time_writer.writerow([t1-t0])
+    
     if status != 0:
         ocp_solver.print_statistics()
         raise Exception('acados acados_ocp_solver returned status {}. Exiting.'.format(status))
@@ -42,12 +56,10 @@ def solve_mpc():
     simX[N,:] = ocp_solver.get(N, 'x')
 
     cost = ocp_solver.get_cost()
-    print('cost', cost)
 
-    x0 = simX[1]
+    x0 = compute_step(list(simX[0]) + list(simU[0]), ts, D)
     ocp_solver.set(0, 'lbx', x0)
     ocp_solver.set(0, 'ubx', x0)
-    print('x0', x0)
 
     return simX, simU
 
@@ -143,5 +155,8 @@ ax2.grid(True)
 
 writergif = animation.PillowWriter(fps=10)
 anim = animation.FuncAnimation(fig, update, interval=100, frames=gen, save_count=3000)
-anim.save(cfg.anim_save_file, writer=writergif)
-# plt.show()
+# anim.save(cfg.anim_save_file, writer=writergif)
+plt.show()
+
+if cfg.log_simple_time:
+    simple_time_csv.close()

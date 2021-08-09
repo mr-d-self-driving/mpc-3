@@ -3,10 +3,10 @@ import casadi as cd
 from casadi.casadi import solve
 
 ipopt_solver = 'ma57'
-solve_method = 'rk4'
+solve_method = 'colloc'
 
 gen_compiled = False
-use_compiled = False
+use_compiled = True
 
 prefix = '_'.join(['mpc', ipopt_solver, solve_method])
 if use_compiled: prefix += '_compiled'
@@ -16,12 +16,15 @@ out_path = os.path.join(curr_path, 'out_mpc')
 os.makedirs(out_path, exist_ok=True)
 os.makedirs(os.path.join(curr_path, 'out_mpc', 'log'), exist_ok=True)
 os.makedirs(os.path.join(curr_path, 'out_mpc', 'time'), exist_ok=True)
+os.makedirs(os.path.join(curr_path, 'out_mpc', 'time_simple'), exist_ok=True)
 os.makedirs(os.path.join(curr_path, 'out_mpc', 'eval'), exist_ok=True)
 
 out_log_file = os.path.join(out_path, 'log', '_'.join([prefix, 'out.txt']))
 
-log_time = True
+log_simple_time = True
+log_time = False
 time_csv = os.path.join(out_path, 'time', '_'.join([prefix, 'time.csv']))
+simple_time_csv = os.path.join(out_path, 'time_simple', '_'.join([prefix, 'simple_time.csv']))
 
 anim_save_file = os.path.join(out_path, prefix +'.gif')
 

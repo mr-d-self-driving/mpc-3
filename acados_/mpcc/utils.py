@@ -31,3 +31,16 @@ def get_curve(curve, prev=None):
     cy = list(ypoly)[::-1]
     
     return xs, ys, xf, yf, init_ts, xpts, ypts, tpts, xpoly, ypoly, cx, cy, order
+
+
+def compute_step(init, ts, D): # init = [x, y, phi, delta, vx, theta, aux, alphaux, dt]
+    x, y, phi, delta, v, theta, a, alpha, dt = init
+    
+    x_ts = x + v*np.cos(phi)*ts
+    y_ts = y + v*np.sin(phi)*ts
+    phi_ts = phi + (v/D)*np.tan(delta)*ts
+    delta_ts = delta + alpha*ts
+    v_ts = v + a*ts
+    theta_ts = theta + v*dt*ts
+
+    return np.array([x_ts, y_ts, phi_ts, delta_ts, v_ts, theta_ts])

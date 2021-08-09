@@ -5,12 +5,17 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import csv
+import time
 import casadi_.mpc.config as cfg
 
 from casadi_.solvers.mpc_rk4 import build_solver as solver_rk4
 from casadi_.solvers.mpc_colloc import build_solver as solver_colloc
 
 plt.style.use('ggplot')
+
+if cfg.log_simple_time:
+    simple_time_csv = open(cfg.simple_time_csv, 'w')
+    simple_time_writer = csv.writer(simple_time_csv)
 
 build_solver = solver_rk4 if cfg.solve_method == 'rk4' else solver_colloc
 T = cfg.T
@@ -38,8 +43,12 @@ def solve_mpc():
     lbw = init_ts + lbw_suffix
     ubw = init_ts + ubw_suffix
 
+    t0 = time.time()
     sol = solver(x0=sol['x'], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'], lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg, p=cd.vertcat(xf, yf))
+    t1 = time.time()
 
+    if cfg.log_simple_time:
+        simple_time_writer.writerow([t1-t0])
     # cost = sol['f'].full().flatten()
 
     state_opt, u_opt = trajectories(sol['x'])
@@ -155,9 +164,12 @@ if cfg.log_time:
         tmp = ' '.join(f.read().split('\n'))
     timing = get_timing(tmp)
 
-time_fl = open(cfg.time_csv, 'w')
-time_writer = csv.writer(time_fl)
-time_writer.writerow(['IN_IPOPT', 'IN_NLP'])
-for t in timing:
-    time_writer.writerow(list(t))
-time_fl.close()
+    time_fl = open(cfg.time_csv, 'w')
+    time_writer = csv.writer(time_fl)
+    time_writer.writerow(['IN_IPOPT', 'IN_NLP'])
+    for t in timing:
+        time_writer.writerow(list(t))
+    time_fl.close()
+
+if cfg.log_simple_time:
+    simple_time_csv.close()
