@@ -26,12 +26,12 @@ for filename in os.listdir(direc):
 
             method = lgd_tmp[1]
             solver = 'DMS' if 'rk4' in filename else 'DC'
-            legend.append(library + ' ' + method + ' ' + solver)
+            legend.append(library + ' ' + method + ' ' + solver + ' ({:.3f})'.format(csv_tmp.mean()))
         else:
             mark_style = '^'
 
             method = lgd_tmp[1]
-            legend.append(library + ' ' + method.split('.')[0])
+            legend.append(library + ' ' + method.split('.')[0] + ' ({:.3f})'.format(csv_tmp.mean()))
 
         if mark_style == 's' or mark_style == '^':
             ax.plot(range(csv_tmp.shape[0]), csv_tmp, marker=mark_style, linestyle=ln_style, markersize=5, color=colors[col_i], alpha=0.3)
@@ -48,9 +48,10 @@ for filename in os.listdir(direc):
         # print('ipopt mean', f'{ipopt_mean:.4f}')
         # print('nlp mean', f'{nlp_mean:.4f}')
 
-ax.set_title('MPCC Timing Stats')
+ax.set_title('MPCC Timing Stats (T=10 N=40)')
 ax.set_ylabel('Seconds')
 ax.set_xlabel('Iteration Number')
+# ax.set_ylim([0.0, 0.08])
 plt.legend(legend)
 plt.grid(True)
 plt.savefig(os.path.join(curr_path, 'mpcc_simple_time_stats.png'), dpi=300)
